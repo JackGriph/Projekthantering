@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Projekthantering.Client/Projekthantering.Client.csproj" />
+  <Project Path="Projekthantering.Shared/Projekthantering.Shared.csproj" />
+  <Project Path="Projekthantering.Tests/Projekthantering.Tests.csproj" />
+  <Project Path="Projekthantering/Projekthantering.Api.csproj" />
+</Solution>
