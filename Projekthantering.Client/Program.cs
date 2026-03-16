@@ -1,37 +1,53 @@
+using Microsoft.AspNetCore.Components.Authorization;
 using Projekthantering.Client.Components;
+using Projekthantering.Client.Services;
 
-namespace Projekthantering.Client
+namespace Projekthantering.Client;
+
+public class Program
 {
-    public class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
+        var builder = WebApplication.CreateBuilder(args);
+
+        builder.Services.AddRazorComponents()
+            .AddInteractiveServerComponents();
+
+        // Auth
+        builder.Services.AddScoped<LocalStorageService>();
+        builder.Services.AddAuthorizationCore();
+        builder.Services.AddScoped<AuthStateProvider>();
+        builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
+            sp.GetRequiredService<AuthStateProvider>());
+
+        // HttpClient mot API
+        builder.Services.AddScoped<AuthHeaderHandler>();
+        builder.Services.AddHttpClient("API", client =>
         {
-            var builder = WebApplication.CreateBuilder(args);
+            client.BaseAddress = new Uri("https://localhost:7191");
+        }).AddHttpMessageHandler<AuthHeaderHandler>();
+        builder.Services.AddScoped(sp =>
+            sp.GetRequiredService<IHttpClientFactory>().CreateClient("API"));
 
-            // Add services to the container.
-            builder.Services.AddRazorComponents()
-                .AddInteractiveServerComponents();
+        // Services
+        builder.Services.AddScoped<AuthService>();
 
-            var app = builder.Build();
+        var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
-            }
-
-            app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-            app.UseHttpsRedirection();
-
-            app.UseAntiforgery();
-
-            app.MapStaticAssets();
-            app.MapRazorComponents<App>()
-                .AddInteractiveServerRenderMode();
-
-            app.Run();
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseExceptionHandler("/Error");
+            app.UseHsts();
         }
+
+        app.UseStatusCodePagesWithReExecute("/not-found",
+            createScopeForStatusCodePages: true);
+        app.UseHttpsRedirection();
+        app.UseAntiforgery();
+        app.MapStaticAssets();
+        app.MapRazorComponents<App>()
+            .AddInteractiveServerRenderMode();
+
+        app.Run();
     }
 }
