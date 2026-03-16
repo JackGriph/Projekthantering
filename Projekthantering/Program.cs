@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Projekthantering.Data;
+using Projekthantering.Services;
+using Projekthantering.Repositories;
 
 namespace Projekthantering;
 
@@ -47,16 +49,16 @@ public class Program
         {
             options.AddPolicy("AllowBlazor", policy =>
             {
-                policy.WithOrigins("https://localhost:5002")
+                policy.WithOrigins("https://localhost:7147")
                       .AllowAnyHeader()
                       .AllowAnyMethod();
             });
         });
 
         // DI - Services och Repositories
-        // builder.Services.AddScoped<IAuthService, AuthService>();
-        // builder.Services.AddScoped<IUserRepository, UserRepository>();
-        // (avkommentera när steg 7 är klart)
+         builder.Services.AddScoped<IAuthService, AuthService>();
+         builder.Services.AddScoped<IUserRepository, UserRepository>();
+        
 
         var app = builder.Build();
 

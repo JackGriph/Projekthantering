@@ -1,0 +1,50 @@
+﻿@page "/register"
+@using Projekthantering.Shared.DTOs
+@inject Projekthantering.Client.Services.AuthService AuthService
+@inject NavigationManager Navigation
+
+<h3>Registrera</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<EditForm Model="registerRequest" OnValidSubmit="HandleRegister"
+          FormName="register">
+    <DataAnnotationsValidator />
+    <div class="mb-3">
+        <label class="form-label">Användarnamn</label>
+        <InputText @bind-Value="registerRequest.Username"
+                   class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <InputText @bind-Value="registerRequest.Email"
+                   class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Lösenord</label>
+        <InputText @bind-Value="registerRequest.Password"
+                   class="form-control" type="password" />
+    </div>
+    <button type="submit" class="btn btn-primary">Registrera</button>
+    <a href="/login" class="btn btn-link">Har redan konto?</a>
+</EditForm>
+
+@code {
+    private RegisterRequest registerRequest = new();
+    private string? errorMessage;
+
+    private async Task HandleRegister()
+    {
+        errorMessage = null;
+        var result = await AuthService.RegisterAsync(registerRequest);
+        if (result == null)
+        {
+            errorMessage = "Registrering misslyckades.";
+            return;
+        }
+        Navigation.NavigateTo("/boards");
+    }
+}
