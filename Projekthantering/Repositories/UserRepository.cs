@@ -34,4 +34,13 @@ public class UserRepository : IUserRepository
 
     public async Task<List<User>> GetAllAsync()
         => await _context.Users.ToListAsync();
+
+    public async Task<User?> GetByRefreshTokenAsync(string refreshToken)
+        => await _context.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+
+    public async Task UpdateAsync(User user)
+    {
+        _context.Users.Update(user);
+        await _context.SaveChangesAsync();
+    }
 }

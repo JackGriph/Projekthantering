@@ -1,5 +1,6 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Projekthantering.Models;
@@ -35,7 +36,7 @@ public class AuthService : IAuthService
         };
 
         await _userRepository.CreateAsync(user);
-        return GenerateAuthResponse(user);
+        return await GenerateAuthResponse(user);
     }
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
@@ -46,15 +47,33 @@ public class AuthService : IAuthService
         if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             throw new InvalidOperationException("Felaktiga inloggningsuppgifter.");
 
-        return GenerateAuthResponse(user);
+        return await GenerateAuthResponse(user);
     }
 
-    private AuthResponse GenerateAuthResponse(User user)
+    public async Task<AuthResponse> RefreshTokenAsync(string refreshToken)
     {
-        var token = GenerateJwtToken(user);
+        var user = await _userRepository.GetByRefreshTokenAsync(refreshToken)
+            ?? throw new InvalidOperationException("Ogiltig refresh token.");
+
+        if (user.RefreshTokenExpiry < DateTime.UtcNow)
+            throw new InvalidOperationException("Refresh token har gått ut.");
+
+        return await GenerateAuthResponse(user);
+    }
+
+    private async Task<AuthResponse> GenerateAuthResponse(User user)
+    {
+        var accessToken = GenerateJwtToken(user);
+        var refreshToken = GenerateRefreshToken();
+
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+        await _userRepository.UpdateAsync(user);
+
         return new AuthResponse
         {
-            Token = token,
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
             Username = user.Username,
             Role = user.Role
         };
@@ -78,9 +97,17 @@ public class AuthService : IAuthService
             issuer: _configuration["Jwt:Issuer"],
             audience: _configuration["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(24),
+            expires: DateTime.UtcNow.AddHours(1),
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private static string GenerateRefreshToken()
+    {
+        var randomBytes = new byte[64];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomBytes);
+        return Convert.ToBase64String(randomBytes);
     }
 }
