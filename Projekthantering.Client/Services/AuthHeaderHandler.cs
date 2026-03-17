@@ -1,12 +1,13 @@
 using System.Net.Http.Headers;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
 namespace Projekthantering.Client.Services;
 
 public class AuthHeaderHandler : DelegatingHandler
 {
-    private readonly LocalStorageService _localStorage;
+    private readonly ProtectedLocalStorage _localStorage;
 
-    public AuthHeaderHandler(LocalStorageService localStorage)
+    public AuthHeaderHandler(ProtectedLocalStorage localStorage)
     {
         _localStorage = localStorage;
     }
@@ -14,12 +15,20 @@ public class AuthHeaderHandler : DelegatingHandler
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var token = await _localStorage.GetItemAsync("authToken");
-        if (!string.IsNullOrEmpty(token))
+        try
         {
-            request.Headers.Authorization =
-                new AuthenticationHeaderValue("Bearer", token);
+            var result = await _localStorage.GetAsync<string>("authToken");
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+                request.Headers.Authorization =
+                    new AuthenticationHeaderValue("Bearer", result.Value);
+            }
         }
+        catch (InvalidOperationException)
+        {
+            // JS interop not available during prerendering
+        }
+
         return await base.SendAsync(request, cancellationToken);
     }
 }
