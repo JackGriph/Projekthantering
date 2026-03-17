@@ -13,8 +13,7 @@ public class Program
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
 
-        // Auth
-        builder.Services.AddScoped<LocalStorageService>();
+        // Auth (ProtectedLocalStorage är redan registrerad av AddRazorComponents)
         builder.Services.AddAuthorizationCore();
         builder.Services.AddScoped<AuthStateProvider>();
         builder.Services.AddScoped<AuthenticationStateProvider>(sp =>

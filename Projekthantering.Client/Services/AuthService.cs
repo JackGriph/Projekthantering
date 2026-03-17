@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Projekthantering.Shared.DTOs;
 
 namespace Projekthantering.Client.Services;
@@ -6,10 +7,10 @@ namespace Projekthantering.Client.Services;
 public class AuthService
 {
     private readonly HttpClient _http;
-    private readonly LocalStorageService _localStorage;
+    private readonly ProtectedLocalStorage _localStorage;
     private readonly AuthStateProvider _authStateProvider;
 
-    public AuthService(HttpClient http, LocalStorageService localStorage,
+    public AuthService(HttpClient http, ProtectedLocalStorage localStorage,
         AuthStateProvider authStateProvider)
     {
         _http = http;
@@ -25,8 +26,8 @@ public class AuthService
         var result = await response.Content.ReadFromJsonAsync<AuthResponse>();
         if (result != null)
         {
-            await _localStorage.SetItemAsync("authToken", result.Token);
-            _authStateProvider.NotifyAuthStateChanged();
+            await _localStorage.SetAsync("authToken", result.Token);
+            _authStateProvider.NotifyUserAuthentication(result.Token);
         }
         return result;
     }
@@ -39,15 +40,15 @@ public class AuthService
         var result = await response.Content.ReadFromJsonAsync<AuthResponse>();
         if (result != null)
         {
-            await _localStorage.SetItemAsync("authToken", result.Token);
-            _authStateProvider.NotifyAuthStateChanged();
+            await _localStorage.SetAsync("authToken", result.Token);
+            _authStateProvider.NotifyUserAuthentication(result.Token);
         }
         return result;
     }
 
     public async Task LogoutAsync()
     {
-        await _localStorage.RemoveItemAsync("authToken");
-        _authStateProvider.NotifyAuthStateChanged();
+        await _localStorage.DeleteAsync("authToken");
+        _authStateProvider.NotifyUserLogout();
     }
 }
