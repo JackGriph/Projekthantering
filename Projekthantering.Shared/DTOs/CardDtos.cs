@@ -9,6 +9,7 @@ public class CardDto
     public string? Description { get; set; }
     public int ListId { get; set; }
     public int Position { get; set; }
+    public string Status { get; set; } = "todo";
     public int? AssigneeId { get; set; }
     public string? AssigneeName { get; set; }
     public DateTime? DueDate { get; set; }
@@ -24,6 +25,10 @@ public class CreateCardRequest
 
     [MaxLength(2000, ErrorMessage = "Beskrivning får vara max 2000 tecken.")]
     public string? Description { get; set; }
+
+    public string Status { get; set; } = "todo";
+
+    public int? AssigneeId { get; set; }
 }
 
 public class UpdateCardRequest
@@ -35,6 +40,8 @@ public class UpdateCardRequest
 
     [MaxLength(2000, ErrorMessage = "Beskrivning får vara max 2000 tecken.")]
     public string? Description { get; set; }
+
+    public string Status { get; set; } = "todo";
 
     public int? AssigneeId { get; set; }
     public DateTime? DueDate { get; set; }

@@ -1,0 +1,339 @@
+@page "/boards/{BoardId:int}"
+@attribute [StreamRendering]
+@using Projekthantering.Shared.DTOs
+@using Projekthantering.Client.Services
+@inject BoardService BoardService
+@inject ListService ListService
+@inject CardService CardService
+@inject NavigationManager Navigation
+
+<PageTitle>@(board?.Title ?? "Tavla")</PageTitle>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible">
+        @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+    </div>
+}
+
+@if (board == null)
+{
+    <p><em>Laddar...</em></p>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <a href="/boards" class="text-muted text-decoration-none me-2">? Tavlor</a>
+            <h2 class="d-inline mb-0">@board.Title</h2>
+        </div>
+        <button class="btn btn-primary btn-sm" @onclick="() => showAddList = true">
+            + Ny lista
+        </button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(board.Description))
+    {
+        <p class="text-muted mb-3">@board.Description</p>
+    }
+
+    @* ?? Add-list inline form ?? *@
+    @if (showAddList)
+    {
+        <div class="card mb-3" style="max-width:280px">
+            <div class="card-body py-2">
+                <EditForm Model="newListRequest" OnValidSubmit="HandleCreateList"
+                          FormName="add-list">
+                    <DataAnnotationsValidator />
+                    <InputText @bind-Value="newListRequest.Title"
+                               class="form-control form-control-sm mb-2"
+                               placeholder="Listtitel..." />
+                    <ValidationMessage For="() => newListRequest.Title" />
+                    <button type="submit" class="btn btn-success btn-sm me-1">Lägg till</button>
+                    <button type="button" class="btn btn-secondary btn-sm"
+                            @onclick="CancelAddList">Avbryt</button>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    @* ?? Kanban columns ?? *@
+    <div class="d-flex gap-3 overflow-auto pb-3 align-items-start">
+        @foreach (var list in lists)
+        {
+            <div class="kanban-column bg-light rounded p-2 flex-shrink-0"
+                 style="width:280px;min-width:280px">
+
+                @* Column header *@
+                @if (editingListId == list.Id)
+                {
+                    <EditForm Model="editListRequest" OnValidSubmit="HandleUpdateList"
+                              FormName="@($"edit-list-{list.Id}")">
+                        <DataAnnotationsValidator />
+                        <div class="input-group input-group-sm mb-2">
+                            <InputText @bind-Value="editListRequest.Title"
+                                       class="form-control" />
+                            <button type="submit" class="btn btn-success">?</button>
+                            <button type="button" class="btn btn-secondary"
+                                    @onclick="CancelEditList">?</button>
+                        </div>
+                    </EditForm>
+                }
+                else
+                {
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong>@list.Title</strong>
+                        <div>
+                            <button class="btn btn-link btn-sm p-0 me-2 text-secondary"
+                                    @onclick="() => StartEditList(list)">??</button>
+                            <button class="btn btn-link btn-sm p-0 text-danger"
+                                    @onclick="() => HandleDeleteList(list.Id)">??</button>
+                        </div>
+                    </div>
+                }
+
+                @* Cards *@
+                @foreach (var card in list.Cards.OrderBy(c => c.Position))
+                {
+                    <div class="card mb-2 shadow-sm">
+                        @if (editingCardId == card.Id)
+                        {
+                            <div class="card-body p-2">
+                                <EditForm Model="editCardRequest"
+                                          OnValidSubmit="HandleUpdateCard"
+                                          FormName="@($"edit-card-{card.Id}")">
+                                    <DataAnnotationsValidator />
+                                    <InputText @bind-Value="editCardRequest.Title"
+                                               class="form-control form-control-sm mb-1"
+                                               placeholder="Titel" />
+                                    <InputTextArea @bind-Value="editCardRequest.Description"
+                                                   class="form-control form-control-sm mb-1"
+                                                   placeholder="Beskrivning" rows="2" />
+                                    <select class="form-select form-select-sm mb-2"
+                                            @bind="editCardRequest.Status">
+                                        <option value="todo">Att göra</option>
+                                        <option value="in_progress">Pågående</option>
+                                        <option value="done">Klar</option>
+                                    </select>
+                                    <button type="submit"
+                                            class="btn btn-success btn-sm me-1">Spara</button>
+                                    <button type="button" class="btn btn-secondary btn-sm"
+                                            @onclick="CancelEditCard">Avbryt</button>
+                                </EditForm>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="card-body p-2">
+                                <div class="d-flex justify-content-between">
+                                    <span class="fw-semibold">@card.Title</span>
+                                    <div class="text-nowrap">
+                                        <button class="btn btn-link btn-sm p-0 me-1 text-secondary"
+                                                @onclick="() => StartEditCard(card)">??</button>
+                                        <button class="btn btn-link btn-sm p-0 text-danger"
+                                                @onclick="() => HandleDeleteCard(list.Id, card.Id)">??</button>
+                                    </div>
+                                </div>
+                                @if (!string.IsNullOrEmpty(card.Description))
+                                {
+                                    <p class="text-muted small mb-1">@card.Description</p>
+                                }
+                                <span class="badge @StatusBadgeClass(card.Status)">
+                                    @StatusLabel(card.Status)
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+
+                @* Add-card form *@
+                @if (addingCardToListId == list.Id)
+                {
+                    <EditForm Model="newCardRequest" OnValidSubmit="HandleCreateCard"
+                              FormName="@($"add-card-{list.Id}")">
+                        <DataAnnotationsValidator />
+                        <InputText @bind-Value="newCardRequest.Title"
+                                   class="form-control form-control-sm mb-1"
+                                   placeholder="Korttitel..." />
+                        <ValidationMessage For="() => newCardRequest.Title" />
+                        <button type="submit"
+                                class="btn btn-success btn-sm me-1 mt-1">Lägg till</button>
+                        <button type="button" class="btn btn-secondary btn-sm mt-1"
+                                @onclick="CancelAddCard">Avbryt</button>
+                    </EditForm>
+                }
+                else
+                {
+                    <button class="btn btn-outline-secondary btn-sm w-100 mt-1"
+                            @onclick="() => StartAddCard(list.Id)">
+                        + Lägg till kort
+                    </button>
+                }
+
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public int BoardId { get; set; }
+
+    private BoardDto? board;
+    private List<BoardListDto> lists = [];
+    private string? errorMessage;
+
+    // List state
+    private bool showAddList;
+    private CreateListRequest newListRequest = new();
+    private int? editingListId;
+    private UpdateListRequest editListRequest = new();
+
+    // Card state
+    private int? addingCardToListId;
+    private CreateCardRequest newCardRequest = new();
+    private int? editingCardId;
+    private UpdateCardRequest editCardRequest = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBoard();
+    }
+
+    private async Task LoadBoard()
+    {
+        try
+        {
+            board = await BoardService.GetBoardAsync(BoardId);
+            if (board == null)
+            {
+                Navigation.NavigateTo("/boards");
+                return;
+            }
+            lists = await ListService.GetListsAsync(BoardId);
+        }
+        catch
+        {
+            errorMessage = "Kunde inte ladda tavlan.";
+        }
+    }
+
+    // ?? List operations ??
+
+    private async Task HandleCreateList()
+    {
+        errorMessage = null;
+        var result = await ListService.CreateListAsync(BoardId, newListRequest);
+        if (result == null) { errorMessage = "Kunde inte skapa listan."; return; }
+        lists.Add(result);
+        newListRequest = new();
+        showAddList = false;
+    }
+
+    private void StartEditList(BoardListDto list)
+    {
+        editingListId = list.Id;
+        editListRequest = new UpdateListRequest
+        {
+            Title = list.Title,
+            Position = list.Position
+        };
+    }
+
+    private async Task HandleUpdateList()
+    {
+        if (editingListId is null) return;
+        errorMessage = null;
+        var result = await ListService.UpdateListAsync(editingListId.Value, editListRequest);
+        if (result == null) { errorMessage = "Kunde inte uppdatera listan."; return; }
+        var idx = lists.FindIndex(l => l.Id == editingListId.Value);
+        if (idx >= 0) lists[idx] = result;
+        editingListId = null;
+    }
+
+    private async Task HandleDeleteList(int listId)
+    {
+        errorMessage = null;
+        var ok = await ListService.DeleteListAsync(listId);
+        if (!ok) { errorMessage = "Kunde inte ta bort listan."; return; }
+        lists.RemoveAll(l => l.Id == listId);
+    }
+
+    private void CancelAddList() { showAddList = false; newListRequest = new(); }
+    private void CancelEditList() => editingListId = null;
+
+    // ?? Card operations ??
+
+    private void StartAddCard(int listId)
+    {
+        addingCardToListId = listId;
+        newCardRequest = new();
+    }
+
+    private async Task HandleCreateCard()
+    {
+        if (addingCardToListId is null) return;
+        errorMessage = null;
+        var result = await CardService.CreateCardAsync(addingCardToListId.Value, newCardRequest);
+        if (result == null) { errorMessage = "Kunde inte skapa kortet."; return; }
+        var list = lists.FirstOrDefault(l => l.Id == addingCardToListId.Value);
+        list?.Cards.Add(result);
+        newCardRequest = new();
+        addingCardToListId = null;
+    }
+
+    private void StartEditCard(CardDto card)
+    {
+        editingCardId = card.Id;
+        editCardRequest = new UpdateCardRequest
+        {
+            Title = card.Title,
+            Description = card.Description,
+            Status = card.Status,
+            AssigneeId = card.AssigneeId,
+            DueDate = card.DueDate
+        };
+    }
+
+    private async Task HandleUpdateCard()
+    {
+        if (editingCardId is null) return;
+        errorMessage = null;
+        var result = await CardService.UpdateCardAsync(editingCardId.Value, editCardRequest);
+        if (result == null) { errorMessage = "Kunde inte uppdatera kortet."; return; }
+        foreach (var list in lists)
+        {
+            var idx = list.Cards.FindIndex(c => c.Id == editingCardId.Value);
+            if (idx >= 0) { list.Cards[idx] = result; break; }
+        }
+        editingCardId = null;
+    }
+
+    private async Task HandleDeleteCard(int listId, int cardId)
+    {
+        errorMessage = null;
+        var ok = await CardService.DeleteCardAsync(cardId);
+        if (!ok) { errorMessage = "Kunde inte ta bort kortet."; return; }
+        var list = lists.FirstOrDefault(l => l.Id == listId);
+        list?.Cards.RemoveAll(c => c.Id == cardId);
+    }
+
+    private void CancelAddCard() { addingCardToListId = null; newCardRequest = new(); }
+    private void CancelEditCard() => editingCardId = null;
+
+    // ?? Helpers ??
+
+    private static string StatusBadgeClass(string status) => status switch
+    {
+        "in_progress" => "bg-warning text-dark",
+        "done"        => "bg-success",
+        _             => "bg-secondary"
+    };
+
+    private static string StatusLabel(string status) => status switch
+    {
+        "in_progress" => "Pågående",
+        "done"        => "Klar",
+        _             => "Att göra"
+    };
+}

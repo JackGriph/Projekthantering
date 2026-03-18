@@ -60,6 +60,8 @@ public class Program
          builder.Services.AddScoped<IUserRepository, UserRepository>();
          builder.Services.AddScoped<IListRepository, ListRepository>();
          builder.Services.AddScoped<IListService, ListService>();
+         builder.Services.AddScoped<ICardRepository, CardRepository>();
+         builder.Services.AddScoped<ICardService, CardService>();
         
 
         var app = builder.Build();
