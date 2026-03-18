@@ -58,6 +58,8 @@ public class Program
         // DI - Services och Repositories
          builder.Services.AddScoped<IAuthService, AuthService>();
          builder.Services.AddScoped<IUserRepository, UserRepository>();
+         builder.Services.AddScoped<IListRepository, ListRepository>();
+         builder.Services.AddScoped<IListService, ListService>();
         
 
         var app = builder.Build();
