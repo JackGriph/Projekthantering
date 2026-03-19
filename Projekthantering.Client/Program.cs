@@ -29,7 +29,7 @@ public class Program
             sp.GetRequiredService<IHttpClientFactory>().CreateClient("API"));
 
         // Services
-        builder.Services.AddScoped<AuthService>();
+        builder.Services.AddScoped<IAuthService, AuthService>();
 
         var app = builder.Build();
 

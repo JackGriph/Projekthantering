@@ -21,7 +21,7 @@ public class AuthStateProvider : AuthenticationStateProvider
     {
         try
         {
-            var result = await _localStorage.GetAsync<string>("authToken");
+            var result = await _localStorage.GetAsync<string>("accessToken");
             var token = result.Value;
 
             if (string.IsNullOrWhiteSpace(token))

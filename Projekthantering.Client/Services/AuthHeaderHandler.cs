@@ -17,7 +17,7 @@ public class AuthHeaderHandler : DelegatingHandler
     {
         try
         {
-            var result = await _localStorage.GetAsync<string>("authToken");
+            var result = await _localStorage.GetAsync<string>("accessToken");
             if (!string.IsNullOrEmpty(result.Value))
             {
                 request.Headers.Authorization =
