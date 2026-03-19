@@ -42,4 +42,18 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpPost("refresh")]
+    public async Task<ActionResult<AuthResponse>> Refresh([FromBody] RefreshRequest request)
+    {
+        try
+        {
+            var response = await _authService.RefreshTokenAsync(request.RefreshToken);
+            return Ok(response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
