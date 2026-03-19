@@ -7,10 +7,12 @@ namespace Projekthantering.Services;
 public class CardService : ICardService
 {
     private readonly ICardRepository _cardRepository;
+    private readonly IUserRepository _userRepository;
 
-    public CardService(ICardRepository cardRepository)
+    public CardService(ICardRepository cardRepository, IUserRepository userRepository)
     {
         _cardRepository = cardRepository;
+        _userRepository = userRepository;
     }
 
     public async Task<List<CardDto>> GetCardsByListAsync(int listId)
@@ -56,8 +58,22 @@ public class CardService : ICardService
         card.Title = request.Title;
         card.Description = request.Description;
         card.Status = CardStatus.IsValid(request.Status) ? request.Status : card.Status;
-        card.AssigneeId = request.AssigneeId;
         card.DueDate = request.DueDate;
+
+        if (!string.IsNullOrWhiteSpace(request.AssignedTo))
+        {
+            var user = await _userRepository.GetByUsernameAsync(request.AssignedTo.Trim());
+            card.AssigneeId = user?.Id;
+        }
+        else if (request.AssignedTo is not null)
+        {
+            // empty string explicitly clears the assignee
+            card.AssigneeId = null;
+        }
+        else
+        {
+            card.AssigneeId = request.AssigneeId;
+        }
 
         var updated = await _cardRepository.UpdateAsync(card);
         return MapToDto(updated);

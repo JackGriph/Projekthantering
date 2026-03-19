@@ -8,19 +8,40 @@
         <EditForm Model="editRequest" OnValidSubmit="HandleUpdate"
                   FormName="@($"edit-card-{Card.Id}")">
             <DataAnnotationsValidator />
-            <InputText @bind-Value="editRequest.Title"
-                       class="form-control form-control-sm mb-1"
-                       placeholder="Titel" />
-            <ValidationMessage For="() => editRequest.Title" />
-            <InputTextArea @bind-Value="editRequest.Description"
-                           class="form-control form-control-sm mb-1"
-                           placeholder="Beskrivning" rows="2" />
-            <select class="form-select form-select-sm mb-2"
-                    @bind="editRequest.Status">
-                <option value="todo">Att göra</option>
-                <option value="in_progress">Pågående</option>
-                <option value="done">Klar</option>
-            </select>
+
+            <div class="mb-1">
+                <label class="form-label form-label-sm mb-0">Titel</label>
+                <InputText @bind-Value="editRequest.Title"
+                           class="form-control form-control-sm" />
+                <ValidationMessage For="() => editRequest.Title" />
+            </div>
+
+            <div class="mb-1">
+                <label class="form-label form-label-sm mb-0">Beskrivning</label>
+                <InputTextArea @bind-Value="editRequest.Description"
+                               class="form-control form-control-sm"
+                               rows="2" />
+                <ValidationMessage For="() => editRequest.Description" />
+            </div>
+
+            <div class="mb-1">
+                <label class="form-label form-label-sm mb-0">Status</label>
+                <InputSelect @bind-Value="editRequest.Status"
+                             class="form-select form-select-sm">
+                    <option value="todo">Att göra</option>
+                    <option value="in_progress">Pågående</option>
+                    <option value="done">Klar</option>
+                </InputSelect>
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label form-label-sm mb-0">Tilldelad</label>
+                <InputText @bind-Value="editRequest.AssignedTo"
+                           class="form-control form-control-sm"
+                           placeholder="Användarnamn..." />
+                <ValidationMessage For="() => editRequest.AssignedTo" />
+            </div>
+
             <button type="submit" class="btn btn-success btn-sm me-1">Spara</button>
             <button type="button" class="btn btn-secondary btn-sm"
                     @onclick="CancelEdit">Avbryt</button>
@@ -71,11 +92,11 @@
     {
         editRequest = new UpdateCardRequest
         {
-            Title = Card.Title,
+            Title      = Card.Title,
             Description = Card.Description,
-            Status = Card.Status,
-            AssigneeId = Card.AssigneeId,
-            DueDate = Card.DueDate
+            Status     = Card.Status,
+            AssignedTo = Card.AssigneeName,
+            DueDate    = Card.DueDate
         };
         isEditing = true;
     }

@@ -44,6 +44,10 @@ public class UpdateCardRequest
     public string Status { get; set; } = "todo";
 
     public int? AssigneeId { get; set; }
+
+    [MaxLength(100, ErrorMessage = "Användarnamn får vara max 100 tecken.")]
+    public string? AssignedTo { get; set; }
+
     public DateTime? DueDate { get; set; }
 }
 
