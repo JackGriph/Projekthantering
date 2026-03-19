@@ -1,10 +1,9 @@
 @page "/boards/{BoardId:int}"
-@page "/boards/{BoardId:int}"
 @attribute [StreamRendering]
 @using Projekthantering.Client.Services
 @using Projekthantering.Client.Components.Shared
-@inject BoardService BoardService
-@inject ListService ListService
+@inject IBoardService BoardService
+@inject IListService ListService
 @inject NavigationManager Navigation
 
 <PageTitle>@(board?.Title ?? "Tavla")</PageTitle>

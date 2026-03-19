@@ -3,7 +3,7 @@ using Projekthantering.Shared.DTOs;
 
 namespace Projekthantering.Client.Services;
 
-public class CardService
+public class CardService : ICardService
 {
     private readonly HttpClient _http;
 

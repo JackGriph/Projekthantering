@@ -42,9 +42,13 @@
                 <ValidationMessage For="() => editRequest.AssignedTo" />
             </div>
 
-            <button type="submit" class="btn btn-success btn-sm me-1">Spara</button>
+            <button type="submit" class="btn btn-success btn-sm me-1"
+                    disabled="@isSubmitting">
+                @if (isSubmitting) { <span class="spinner-border spinner-border-sm me-1" role="status"></span> }
+                Spara
+            </button>
             <button type="button" class="btn btn-secondary btn-sm"
-                    @onclick="CancelEdit">Avbryt</button>
+                    @onclick="CancelEdit" disabled="@isSubmitting">Avbryt</button>
         </EditForm>
     }
     else
@@ -53,9 +57,11 @@
             <span class="fw-semibold small">@Card.Title</span>
             <div class="text-nowrap ms-1">
                 <button class="btn btn-link btn-sm p-0 me-1 text-secondary"
-                        @onclick="StartEdit" title="Redigera">??</button>
+                        @onclick="StartEdit" title="Redigera"
+                        disabled="@isSubmitting">??</button>
                 <button class="btn btn-link btn-sm p-0 text-danger"
-                        @onclick="HandleDelete" title="Ta bort">??</button>
+                        @onclick="HandleDelete" title="Ta bort"
+                        disabled="@isSubmitting">??</button>
             </div>
         </div>
         @if (!string.IsNullOrEmpty(Card.Description))
@@ -85,6 +91,7 @@
     [Parameter] public EventCallback<int> OnCardDeleted { get; set; }
 
     private bool isEditing;
+    private bool isSubmitting;
     private UpdateCardRequest editRequest = new();
     private string? errorMessage;
 
@@ -92,11 +99,11 @@
     {
         editRequest = new UpdateCardRequest
         {
-            Title      = Card.Title,
+            Title       = Card.Title,
             Description = Card.Description,
-            Status     = Card.Status,
-            AssignedTo = Card.AssigneeName,
-            DueDate    = Card.DueDate
+            Status      = Card.Status,
+            AssignedTo  = Card.AssigneeName,
+            DueDate     = Card.DueDate
         };
         isEditing = true;
     }
@@ -110,28 +117,44 @@
     private async Task HandleUpdate()
     {
         errorMessage = null;
-        var response = await Http.PatchAsJsonAsync($"api/cards/{Card.Id}", editRequest);
-        if (!response.IsSuccessStatusCode)
+        isSubmitting = true;
+        try
         {
-            errorMessage = "Kunde inte uppdatera kortet.";
-            return;
+            var response = await Http.PatchAsJsonAsync($"api/cards/{Card.Id}", editRequest);
+            if (!response.IsSuccessStatusCode)
+            {
+                errorMessage = "Kunde inte uppdatera kortet.";
+                return;
+            }
+            var updated = await response.Content.ReadFromJsonAsync<CardDto>();
+            if (updated is null) { errorMessage = "Ogiltigt svar från servern."; return; }
+            isEditing = false;
+            await OnCardUpdated.InvokeAsync(updated);
         }
-        var updated = await response.Content.ReadFromJsonAsync<CardDto>();
-        if (updated is null) { errorMessage = "Ogiltigt svar från servern."; return; }
-        isEditing = false;
-        await OnCardUpdated.InvokeAsync(updated);
+        finally
+        {
+            isSubmitting = false;
+        }
     }
 
     private async Task HandleDelete()
     {
         errorMessage = null;
-        var response = await Http.DeleteAsync($"api/cards/{Card.Id}");
-        if (!response.IsSuccessStatusCode)
+        isSubmitting = true;
+        try
         {
-            errorMessage = "Kunde inte ta bort kortet.";
-            return;
+            var response = await Http.DeleteAsync($"api/cards/{Card.Id}");
+            if (!response.IsSuccessStatusCode)
+            {
+                errorMessage = "Kunde inte ta bort kortet.";
+                return;
+            }
+            await OnCardDeleted.InvokeAsync(Card.Id);
         }
-        await OnCardDeleted.InvokeAsync(Card.Id);
+        finally
+        {
+            isSubmitting = false;
+        }
     }
 
     private static string StatusBadgeClass(string status) => status switch

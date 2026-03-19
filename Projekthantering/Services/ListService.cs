@@ -65,15 +65,16 @@ public class ListService : IListService
         Position = list.Position,
         Cards = list.Cards.Select(c => new CardDto
         {
-            Id = c.Id,
-            Title = c.Title,
-            Description = c.Description,
-            ListId = c.ListId,
-            Position = c.Position,
-            AssigneeId = c.AssigneeId,
+            Id           = c.Id,
+            Title        = c.Title,
+            Description  = c.Description,
+            ListId       = c.ListId,
+            Position     = c.Position,
+            Status       = c.Status,
+            AssigneeId   = c.AssigneeId,
             AssigneeName = c.Assignee?.Username,
-            DueDate = c.DueDate,
-            CreatedAt = c.CreatedAt
+            DueDate      = c.DueDate,
+            CreatedAt    = c.CreatedAt
         }).ToList()
     };
 }

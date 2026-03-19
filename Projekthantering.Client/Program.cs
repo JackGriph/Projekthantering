@@ -30,6 +30,9 @@ public class Program
 
         // Services
         builder.Services.AddScoped<IAuthService, AuthService>();
+        builder.Services.AddScoped<IBoardService, BoardService>();
+        builder.Services.AddScoped<IListService, ListService>();
+        builder.Services.AddScoped<ICardService, CardService>();
 
         var app = builder.Build();
 

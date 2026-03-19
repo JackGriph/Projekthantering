@@ -51,11 +51,4 @@ public class UpdateCardRequest
     public DateTime? DueDate { get; set; }
 }
 
-public class MoveCardRequest
-{
-    [Required]
-    public int TargetListId { get; set; }
 
-    [Range(0, int.MaxValue, ErrorMessage = "Position måste vara ett positivt tal.")]
-    public int NewPosition { get; set; }
-}

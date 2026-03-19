@@ -3,7 +3,7 @@ using Projekthantering.Shared.DTOs;
 
 namespace Projekthantering.Client.Services;
 
-public class BoardService
+public class BoardService : IBoardService
 {
     private readonly HttpClient _http;
 

@@ -41,12 +41,19 @@
     }
     else
     {
-        @* ?? Cards — one CardComponent per card ?? *@
-        @foreach (var card in cards.OrderBy(c => c.Position))
+        @* ?? Cards ?? *@
+        @if (cards.Count == 0)
         {
-            <CardComponent Card="card"
-                           OnCardUpdated="HandleCardUpdated"
-                           OnCardDeleted="HandleCardDeleted" />
+            <p class="text-muted small text-center py-2 mb-1">Inga kort ännu — lägg till ett!</p>
+        }
+        else
+        {
+            @foreach (var card in cards.OrderBy(c => c.Position))
+            {
+                <CardComponent Card="card"
+                               OnCardUpdated="HandleCardUpdated"
+                               OnCardDeleted="HandleCardDeleted" />
+            }
         }
 
         @* ?? Add card ?? *@
@@ -59,9 +66,13 @@
                            class="form-control form-control-sm mb-1"
                            placeholder="Korttitel..." />
                 <ValidationMessage For="() => newCardRequest.Title" />
-                <button type="submit" class="btn btn-success btn-sm me-1 mt-1">Lägg till</button>
+                <button type="submit" class="btn btn-success btn-sm me-1 mt-1"
+                        disabled="@isSubmitting">
+                    @if (isSubmitting) { <span class="spinner-border spinner-border-sm me-1" role="status"></span> }
+                    Lägg till
+                </button>
                 <button type="button" class="btn btn-secondary btn-sm mt-1"
-                        @onclick="CancelAddCard">Avbryt</button>
+                        @onclick="CancelAddCard" disabled="@isSubmitting">Avbryt</button>
             </EditForm>
         }
         else
@@ -100,6 +111,7 @@
 
     // Add-card form
     private bool isAddingCard;
+    private bool isSubmitting;
     private CreateCardRequest newCardRequest = new();
 
     protected override async Task OnInitializedAsync()
@@ -159,13 +171,21 @@
     private async Task HandleCreateCard()
     {
         errorMessage = null;
-        var response = await Http.PostAsJsonAsync($"api/lists/{List.Id}/cards", newCardRequest);
-        if (!response.IsSuccessStatusCode) { errorMessage = "Kunde inte skapa kortet."; return; }
-        var created = await response.Content.ReadFromJsonAsync<CardDto>();
-        if (created is null) { errorMessage = "Ogiltigt svar från servern."; return; }
-        cards.Add(created);
-        newCardRequest = new();
-        isAddingCard = false;
+        isSubmitting = true;
+        try
+        {
+            var response = await Http.PostAsJsonAsync($"api/lists/{List.Id}/cards", newCardRequest);
+            if (!response.IsSuccessStatusCode) { errorMessage = "Kunde inte skapa kortet."; return; }
+            var created = await response.Content.ReadFromJsonAsync<CardDto>();
+            if (created is null) { errorMessage = "Ogiltigt svar från servern."; return; }
+            cards.Add(created);
+            newCardRequest = new();
+            isAddingCard = false;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
     }
 
     private void HandleCardUpdated(CardDto updated)

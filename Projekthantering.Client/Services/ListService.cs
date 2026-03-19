@@ -3,7 +3,7 @@ using Projekthantering.Shared.DTOs;
 
 namespace Projekthantering.Client.Services;
 
-public class ListService
+public class ListService : IListService
 {
     private readonly HttpClient _http;
 
