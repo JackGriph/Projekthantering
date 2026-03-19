@@ -69,9 +69,9 @@ else if (board != null)
     <div class="kanban-board">
         @foreach (var list in lists)
         {
-            <ListComponent List="list"
-                           OnDeleted="HandleListDeleted"
-                           OnUpdated="HandleListUpdated" />
+        <ListComponent List="list"
+                           OnListDeleted="HandleListDeleted"
+                           OnListUpdated="HandleListUpdated" />
         }
     </div>
 }
