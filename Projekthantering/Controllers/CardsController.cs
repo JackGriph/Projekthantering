@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Projekthantering.Repositories;
 using Projekthantering.Services;
 using Projekthantering.Shared.DTOs;
 
@@ -9,12 +8,10 @@ namespace Projekthantering.Controllers;
 public class CardsController : ControllerBase
 {
     private readonly ICardService _cardService;
-    private readonly ICardRepository _cardRepository;
 
-    public CardsController(ICardService cardService, ICardRepository cardRepository)
+    public CardsController(ICardService cardService)
     {
         _cardService = cardService;
-        _cardRepository = cardRepository;
     }
 
     // POST /api/lists/{listId}/cards
@@ -24,7 +21,7 @@ public class CardsController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var listExists = await _cardRepository.ListExistsAsync(listId);
+        var listExists = await _cardService.ListExistsAsync(listId);
         if (!listExists)
             return NotFound(new { message = "Listan hittades inte." });
 
@@ -36,7 +33,7 @@ public class CardsController : ControllerBase
     [HttpGet("api/lists/{listId}/cards")]
     public async Task<ActionResult<List<CardDto>>> GetCardsByList(int listId)
     {
-        var listExists = await _cardRepository.ListExistsAsync(listId);
+        var listExists = await _cardService.ListExistsAsync(listId);
         if (!listExists)
             return NotFound(new { message = "Listan hittades inte." });
 

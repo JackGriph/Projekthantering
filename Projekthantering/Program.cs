@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Projekthantering.Data;
 using Projekthantering.Services;
 using Projekthantering.Repositories;
+using System.Security.Claims;
 
 namespace Projekthantering;
 

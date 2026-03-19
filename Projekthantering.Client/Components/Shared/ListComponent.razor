@@ -1,5 +1,6 @@
 @using Projekthantering.Client.Services
 @inject HttpClient Http
+@inject ILogger<ListComponent> Logger
 
 <div class="kanban-column">
 
@@ -129,8 +130,9 @@
                 $"api/lists/{List.Id}/cards");
             cards = result ?? [];
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Fel vid laddning av kort för lista {ListId}", List.Id);
             errorMessage = "Kunde inte ladda kort.";
         }
         finally

@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Projekthantering.Repositories;
 using Projekthantering.Services;
 using Projekthantering.Shared.DTOs;
 
@@ -9,12 +8,10 @@ namespace Projekthantering.Controllers;
 public class ListsController : ControllerBase
 {
     private readonly IListService _listService;
-    private readonly IListRepository _listRepository;
 
-    public ListsController(IListService listService, IListRepository listRepository)
+    public ListsController(IListService listService)
     {
         _listService = listService;
-        _listRepository = listRepository;
     }
 
     // POST /api/boards/{boardId}/lists
@@ -24,7 +21,7 @@ public class ListsController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var boardExists = await _listRepository.BoardExistsAsync(boardId);
+        var boardExists = await _listService.BoardExistsAsync(boardId);
         if (!boardExists)
             return NotFound(new { message = "Tavlan hittades inte." });
 
@@ -36,7 +33,7 @@ public class ListsController : ControllerBase
     [HttpGet("api/boards/{boardId}/lists")]
     public async Task<ActionResult<List<BoardListDto>>> GetListsByBoard(int boardId)
     {
-        var boardExists = await _listRepository.BoardExistsAsync(boardId);
+        var boardExists = await _listService.BoardExistsAsync(boardId);
         if (!boardExists)
             return NotFound(new { message = "Tavlan hittades inte." });
 

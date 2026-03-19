@@ -1,18 +1,17 @@
 using Projekthantering.Models;
 using Projekthantering.Repositories;
 using Projekthantering.Shared.DTOs;
+     
 
 namespace Projekthantering.Services;
 
 public class BoardService : IBoardService
 {
     private readonly IBoardRepository _boardRepository;
-    private readonly IUserRepository _userRepository;
 
-    public BoardService(IBoardRepository boardRepository, IUserRepository userRepository)
+    public BoardService(IBoardRepository boardRepository)
     {
         _boardRepository = boardRepository;
-        _userRepository  = userRepository;
     }
 
     public async Task<List<BoardDto>> GetBoardsAsync()

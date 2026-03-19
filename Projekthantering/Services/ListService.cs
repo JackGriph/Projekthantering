@@ -1,4 +1,5 @@
 using Projekthantering.Models;
+using Projekthantering.Models;
 using Projekthantering.Repositories;
 using Projekthantering.Shared.DTOs;
 
@@ -12,6 +13,9 @@ public class ListService : IListService
     {
         _listRepository = listRepository;
     }
+
+    public async Task<bool> BoardExistsAsync(int boardId)
+        => await _listRepository.BoardExistsAsync(boardId);
 
     public async Task<List<BoardListDto>> GetListsByBoardAsync(int boardId)
     {
@@ -60,21 +64,23 @@ public class ListService : IListService
 
     private static BoardListDto MapToDto(BoardList list) => new()
     {
-        Id = list.Id,
-        Title = list.Title,
+        Id       = list.Id,
+        Title    = list.Title,
         Position = list.Position,
-        Cards = list.Cards.Select(c => new CardDto
-        {
-            Id           = c.Id,
-            Title        = c.Title,
-            Description  = c.Description,
-            ListId       = c.ListId,
-            Position     = c.Position,
-            Status       = c.Status,
-            AssigneeId   = c.AssigneeId,
-            AssigneeName = c.Assignee?.Username,
-            DueDate      = c.DueDate,
-            CreatedAt    = c.CreatedAt
-        }).ToList()
+        Cards    = list.Cards.Select(MapCardToDto).ToList()
+    };
+
+    private static CardDto MapCardToDto(Card c) => new()
+    {
+        Id           = c.Id,
+        Title        = c.Title,
+        Description  = c.Description,
+        ListId       = c.ListId,
+        Position     = c.Position,
+        Status       = c.Status,
+        AssigneeId   = c.AssigneeId,
+        AssigneeName = c.Assignee?.Username,
+        DueDate      = c.DueDate,
+        CreatedAt    = c.CreatedAt
     };
 }

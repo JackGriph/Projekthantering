@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Projekthantering.Services;
 using Projekthantering.Shared.DTOs;
@@ -42,9 +42,11 @@ public class BoardsController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        // TODO: replace with User.GetUserId() once JWT claim extraction is wired up
-        const int temporaryOwnerId = 1;
-        var board = await _boardService.CreateBoardAsync(request, temporaryOwnerId);
+        // Efter — läser userId ur JWT-claimet
+        var ownerIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(ownerIdClaim, out var ownerId))
+            return Unauthorized();
+        var board = await _boardService.CreateBoardAsync(request, ownerId);
         return CreatedAtAction(nameof(GetBoard), new { id = board.Id }, board);
     }
 

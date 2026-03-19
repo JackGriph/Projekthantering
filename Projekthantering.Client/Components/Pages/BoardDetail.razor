@@ -5,6 +5,7 @@
 @inject IBoardService BoardService
 @inject IListService ListService
 @inject NavigationManager Navigation
+@inject ILogger<BoardDetail> Logger
 
 <PageTitle>@(board?.Title ?? "Tavla")</PageTitle>
 
@@ -105,8 +106,9 @@ else if (board != null)
             }
             lists = await ListService.GetListsAsync(BoardId);
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Fel vid laddning av tavla {BoardId}", BoardId);
             errorMessage = "Kunde inte ladda tavlan. Kontrollera anslutningen och försök igen.";
         }
         finally

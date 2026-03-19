@@ -15,6 +15,9 @@ public class CardService : ICardService
         _userRepository = userRepository;
     }
 
+    public async Task<bool> ListExistsAsync(int listId)
+        => await _cardRepository.ListExistsAsync(listId);
+
     public async Task<List<CardDto>> GetCardsByListAsync(int listId)
     {
         var cards = await _cardRepository.GetByListIdAsync(listId);
