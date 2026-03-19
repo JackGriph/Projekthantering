@@ -1,5 +1,4 @@
 using Projekthantering.Models;
-using Projekthantering.Models;
 using Projekthantering.Repositories;
 using Projekthantering.Shared.DTOs;
 
