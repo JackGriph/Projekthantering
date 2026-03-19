@@ -1,5 +1,7 @@
 @inject HttpClient Http
 
+@inject HttpClient Http
+
 <div class="kanban-card">
     @if (isEditing)
     {
@@ -39,9 +41,15 @@
         {
             <p class="text-muted small mb-1 mt-1">@Card.Description</p>
         }
-        <span class="badge @StatusBadgeClass(Card.Status) mt-1">
-            @StatusLabel(Card.Status)
-        </span>
+        <div class="kanban-card-meta">
+            <span class="badge @StatusBadgeClass(Card.Status)">
+                @StatusLabel(Card.Status)
+            </span>
+            @if (!string.IsNullOrEmpty(Card.AssigneeName))
+            {
+                <span title="Tilldelad">?? @Card.AssigneeName</span>
+            }
+        </div>
     }
 
     @if (!string.IsNullOrEmpty(errorMessage))
@@ -52,8 +60,8 @@
 
 @code {
     [Parameter, EditorRequired] public CardDto Card { get; set; } = default!;
-    [Parameter] public EventCallback<CardDto> OnUpdated { get; set; }
-    [Parameter] public EventCallback<int> OnDeleted { get; set; }
+    [Parameter] public EventCallback<CardDto> OnCardUpdated { get; set; }
+    [Parameter] public EventCallback<int> OnCardDeleted { get; set; }
 
     private bool isEditing;
     private UpdateCardRequest editRequest = new();
@@ -90,7 +98,7 @@
         var updated = await response.Content.ReadFromJsonAsync<CardDto>();
         if (updated is null) { errorMessage = "Ogiltigt svar från servern."; return; }
         isEditing = false;
-        await OnUpdated.InvokeAsync(updated);
+        await OnCardUpdated.InvokeAsync(updated);
     }
 
     private async Task HandleDelete()
@@ -102,14 +110,14 @@
             errorMessage = "Kunde inte ta bort kortet.";
             return;
         }
-        await OnDeleted.InvokeAsync(Card.Id);
+        await OnCardDeleted.InvokeAsync(Card.Id);
     }
 
     private static string StatusBadgeClass(string status) => status switch
     {
-        "in_progress" => "bg-warning text-dark",
-        "done"        => "bg-success",
-        _             => "bg-secondary"
+        "in_progress" => "badge-status-in_progress",
+        "done"        => "badge-status-done",
+        _             => "badge-status-todo"
     };
 
     private static string StatusLabel(string status) => status switch

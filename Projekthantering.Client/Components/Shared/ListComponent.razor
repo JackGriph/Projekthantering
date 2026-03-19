@@ -45,8 +45,8 @@
         @foreach (var card in cards.OrderBy(c => c.Position))
         {
             <CardComponent Card="card"
-                           OnUpdated="HandleCardUpdated"
-                           OnDeleted="HandleCardDeleted" />
+                           OnCardUpdated="HandleCardUpdated"
+                           OnCardDeleted="HandleCardDeleted" />
         }
 
         @* ?? Add card ?? *@
