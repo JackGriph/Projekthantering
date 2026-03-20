@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Projekthantering.Services;
 using Projekthantering.Shared.DTOs;
@@ -5,6 +6,7 @@ using Projekthantering.Shared.DTOs;
 namespace Projekthantering.Controllers;
 
 [ApiController]
+[Authorize]
 public class CardsController : ControllerBase
 {
     private readonly ICardService _cardService;

@@ -8,33 +8,52 @@ namespace Projekthantering.Client.Services;
 public class AuthStateProvider : AuthenticationStateProvider
 {
     private readonly ProtectedLocalStorage _localStorage;
+    private readonly TokenProvider _tokenProvider;
     private readonly AuthenticationState _anonymous;
 
-    public AuthStateProvider(ProtectedLocalStorage localStorage)
+    public AuthStateProvider(ProtectedLocalStorage localStorage, TokenProvider tokenProvider)
     {
         _localStorage = localStorage;
+        _tokenProvider = tokenProvider;
         _anonymous = new AuthenticationState(
             new ClaimsPrincipal(new ClaimsIdentity()));
     }
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        try
-        {
-            var result = await _localStorage.GetAsync<string>("accessToken");
-            var token = result.Value;
+        // Först: kolla in-memory token
+        var token = _tokenProvider.AccessToken;
 
-            if (string.IsNullOrWhiteSpace(token))
+        // Om tomt: försök hämta från ProtectedLocalStorage (vid sidladdning)
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            try
+            {
+                var result = await _localStorage.GetAsync<string>("accessToken");
+                token = result.Value;
+
+                // Synka tillbaka till TokenProvider så att AuthHeaderHandler kan använda den
+                if (!string.IsNullOrWhiteSpace(token))
+                {
+                    _tokenProvider.AccessToken = token;
+
+                    var refreshResult = await _localStorage.GetAsync<string>("refreshToken");
+                    _tokenProvider.RefreshToken = refreshResult.Value;
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // JS interop inte tillgängligt under prerendering
                 return _anonymous;
+            }
+        }
 
-            var claims = ParseClaimsFromJwt(token);
-            var identity = new ClaimsIdentity(claims, "jwt");
-            return new AuthenticationState(new ClaimsPrincipal(identity));
-        }
-        catch (InvalidOperationException)
-        {
+        if (string.IsNullOrWhiteSpace(token))
             return _anonymous;
-        }
+
+        var claims = ParseClaimsFromJwt(token);
+        var identity = new ClaimsIdentity(claims, "jwt");
+        return new AuthenticationState(new ClaimsPrincipal(identity));
     }
 
     public void NotifyUserAuthentication(string token)

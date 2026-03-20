@@ -20,6 +20,12 @@ public class BoardService : IBoardService
         return boards.Select(MapToDto).ToList();
     }
 
+    public async Task<List<BoardDto>> GetBoardsByUserAsync(int userId)
+    {
+        var boards = await _boardRepository.GetByUserIdAsync(userId);
+        return boards.Select(MapToDto).ToList();
+    }
+
     public async Task<BoardDto?> GetBoardByIdAsync(int id)
     {
         var board = await _boardRepository.GetByIdAsync(id);

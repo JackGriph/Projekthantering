@@ -1,5 +1,5 @@
 @page "/boards/{BoardId:int}"
-@attribute [StreamRendering]
+@rendermode InteractiveServer
 @using Projekthantering.Client.Services
 @using Projekthantering.Client.Components.Shared
 @inject IBoardService BoardService
@@ -57,7 +57,7 @@ else if (board != null)
                                class="form-control form-control-sm mb-2"
                                placeholder="Listtitel..." />
                     <ValidationMessage For="() => newListRequest.Title" />
-                    <button type="submit" class="btn btn-success btn-sm me-1">Lägg till</button>
+                    <button type="submit" class="btn btn-success btn-sm me-1">Lï¿½gg till</button>
                     <button type="button" class="btn btn-secondary btn-sm"
                             @onclick="CancelAddList">Avbryt</button>
                 </EditForm>
@@ -65,7 +65,7 @@ else if (board != null)
         </div>
     }
 
-    @* ?? Kanban board — one ListComponent per list ?? *@
+    @* ?? Kanban board ï¿½ one ListComponent per list ?? *@
     <div class="kanban-board">
         @foreach (var list in lists)
         {
@@ -109,7 +109,7 @@ else if (board != null)
         catch (Exception ex)
         {
             Logger.LogError(ex, "Fel vid laddning av tavla {BoardId}", BoardId);
-            errorMessage = "Kunde inte ladda tavlan. Kontrollera anslutningen och försök igen.";
+            errorMessage = "Kunde inte ladda tavlan. Kontrollera anslutningen och fï¿½rsï¿½k igen.";
         }
         finally
         {

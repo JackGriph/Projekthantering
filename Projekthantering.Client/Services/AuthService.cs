@@ -8,13 +8,15 @@ public class AuthService : IAuthService
 {
     private readonly HttpClient _http;
     private readonly ProtectedLocalStorage _localStorage;
+    private readonly TokenProvider _tokenProvider;
     private readonly AuthStateProvider _authStateProvider;
 
     public AuthService(HttpClient http, ProtectedLocalStorage localStorage,
-        AuthStateProvider authStateProvider)
+        TokenProvider tokenProvider, AuthStateProvider authStateProvider)
     {
         _http = http;
         _localStorage = localStorage;
+        _tokenProvider = tokenProvider;
         _authStateProvider = authStateProvider;
     }
 
@@ -32,6 +34,9 @@ public class AuthService : IAuthService
         if (authResponse == null)
             return AuthResult.Fail("Ogiltigt svar från servern.");
 
+        // Spara i minnet (för AuthHeaderHandler) OCH i ProtectedLocalStorage (för sidladdning)
+        _tokenProvider.AccessToken = authResponse.AccessToken;
+        _tokenProvider.RefreshToken = authResponse.RefreshToken;
         await _localStorage.SetAsync("accessToken", authResponse.AccessToken);
         await _localStorage.SetAsync("refreshToken", authResponse.RefreshToken);
         _authStateProvider.NotifyUserAuthentication(authResponse.AccessToken);
@@ -53,6 +58,9 @@ public class AuthService : IAuthService
         if (authResponse == null)
             return AuthResult.Fail("Ogiltigt svar från servern.");
 
+        // Spara i minnet (för AuthHeaderHandler) OCH i ProtectedLocalStorage (för sidladdning)
+        _tokenProvider.AccessToken = authResponse.AccessToken;
+        _tokenProvider.RefreshToken = authResponse.RefreshToken;
         await _localStorage.SetAsync("accessToken", authResponse.AccessToken);
         await _localStorage.SetAsync("refreshToken", authResponse.RefreshToken);
         _authStateProvider.NotifyUserAuthentication(authResponse.AccessToken);
@@ -62,6 +70,8 @@ public class AuthService : IAuthService
 
     public async Task LogoutAsync()
     {
+        _tokenProvider.AccessToken = null;
+        _tokenProvider.RefreshToken = null;
         await _localStorage.DeleteAsync("accessToken");
         await _localStorage.DeleteAsync("refreshToken");
         _authStateProvider.NotifyUserLogout();
@@ -87,6 +97,8 @@ public class AuthService : IAuthService
             if (authResponse == null)
                 return false;
 
+            _tokenProvider.AccessToken = authResponse.AccessToken;
+            _tokenProvider.RefreshToken = authResponse.RefreshToken;
             await _localStorage.SetAsync("accessToken", authResponse.AccessToken);
             await _localStorage.SetAsync("refreshToken", authResponse.RefreshToken);
             _authStateProvider.NotifyUserAuthentication(authResponse.AccessToken);

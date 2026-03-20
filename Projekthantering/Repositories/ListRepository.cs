@@ -18,11 +18,13 @@ public class ListRepository : IListRepository
             .Where(l => l.BoardId == boardId)
             .OrderBy(l => l.Position)
             .Include(l => l.Cards)
+                .ThenInclude(c => c.Assignee)
             .ToListAsync();
 
     public async Task<BoardList?> GetByIdAsync(int id)
         => await _context.BoardLists
             .Include(l => l.Cards)
+                .ThenInclude(c => c.Assignee)
             .FirstOrDefaultAsync(l => l.Id == id);
 
     public async Task<BoardList> CreateAsync(BoardList list)

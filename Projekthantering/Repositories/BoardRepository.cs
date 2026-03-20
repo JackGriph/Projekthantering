@@ -19,6 +19,13 @@ public class BoardRepository : IBoardRepository
             .OrderByDescending(b => b.CreatedAt)
             .ToListAsync();
 
+    public async Task<List<Board>> GetByUserIdAsync(int userId)
+        => await _context.Boards
+            .Where(b => b.OwnerId == userId || b.Members.Any(m => m.UserId == userId))
+            .Include(b => b.Owner)
+            .OrderByDescending(b => b.CreatedAt)
+            .ToListAsync();
+
     public async Task<Board?> GetByIdAsync(int id)
         => await _context.Boards
             .Include(b => b.Owner)

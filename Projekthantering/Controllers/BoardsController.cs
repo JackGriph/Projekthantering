@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Projekthantering.Services;
 using Projekthantering.Shared.DTOs;
@@ -7,6 +8,7 @@ namespace Projekthantering.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class BoardsController : ControllerBase
 {
     private readonly IBoardService _boardService;
@@ -20,7 +22,11 @@ public class BoardsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<BoardDto>>> GetBoards()
     {
-        var boards = await _boardService.GetBoardsAsync();
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized();
+
+        var boards = await _boardService.GetBoardsByUserAsync(userId);
         return Ok(boards);
     }
 
@@ -42,7 +48,7 @@ public class BoardsController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        // Efter — läser userId ur JWT-claimet
+        // Efter ï¿½ lï¿½ser userId ur JWT-claimet
         var ownerIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!int.TryParse(ownerIdClaim, out var ownerId))
             return Unauthorized();

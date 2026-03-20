@@ -1,5 +1,5 @@
 @page "/boards"
-@attribute [StreamRendering]
+@rendermode InteractiveServer
 @using Projekthantering.Shared.DTOs
 @using Projekthantering.Client.Services
 @inject IBoardService BoardService
@@ -51,7 +51,7 @@
 }
 else if (boards.Count == 0)
 {
-    <p class="text-muted">Du har inga tavlor ännu. Skapa en ovan!</p>
+    <p class="text-muted">Du har inga tavlor ï¿½nnu. Skapa en ovan!</p>
 }
 else
 {
@@ -69,13 +69,13 @@ else
                         <p class="card-text">
                             <small class="text-muted">
                                 Skapad av @board.OwnerName
-                                · @board.CreatedAt.ToLocalTime().ToString("d MMM yyyy")
+                                ï¿½ @board.CreatedAt.ToLocalTime().ToString("d MMM yyyy")
                             </small>
                         </p>
                     </div>
                     <div class="card-footer d-flex justify-content-between">
                         <a class="btn btn-outline-primary btn-sm"
-                           href="/boards/@board.Id">Öppna</a>
+                           href="/boards/@board.Id">ï¿½ppna</a>
                         <button class="btn btn-outline-danger btn-sm"
                                 @onclick="() => HandleDeleteBoard(board.Id)">
                             Ta bort
