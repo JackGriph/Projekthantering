@@ -29,6 +29,10 @@ public class BoardRepository : IBoardRepository
     public async Task<Board?> GetByIdAsync(int id)
         => await _context.Boards
             .Include(b => b.Owner)
+            .Include(b => b.Lists)
+                .ThenInclude(l => l.Cards)
+            .Include(b => b.Members)
+                .ThenInclude(m => m.User)
             .FirstOrDefaultAsync(b => b.Id == id);
 
     public async Task<Board> CreateAsync(Board board)

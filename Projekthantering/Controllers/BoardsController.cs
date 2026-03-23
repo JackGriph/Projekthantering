@@ -34,7 +34,11 @@ public class BoardsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<BoardDto>> GetBoard(int id)
     {
-        var board = await _boardService.GetBoardByIdAsync(id);
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized();
+
+        var board = await _boardService.GetBoardByIdAsync(id, userId);
         if (board is null)
             return NotFound(new { message = "Tavlan hittades inte." });
 
@@ -56,14 +60,18 @@ public class BoardsController : ControllerBase
         return CreatedAtAction(nameof(GetBoard), new { id = board.Id }, board);
     }
 
-    // PATCH /api/boards/{id}
-    [HttpPatch("{id}")]
+    // PUT /api/boards/{id}
+    [HttpPut("{id}")]
     public async Task<ActionResult<BoardDto>> UpdateBoard(int id, UpdateBoardRequest request)
     {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized();
+
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var board = await _boardService.UpdateBoardAsync(id, request);
+        var board = await _boardService.UpdateBoardAsync(id, request, userId);
         if (board is null)
             return NotFound(new { message = "Tavlan hittades inte." });
 
@@ -74,7 +82,11 @@ public class BoardsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteBoard(int id)
     {
-        var deleted = await _boardService.DeleteBoardAsync(id);
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized();
+
+        var deleted = await _boardService.DeleteBoardAsync(id, userId);
         if (!deleted)
             return NotFound(new { message = "Tavlan hittades inte." });
 

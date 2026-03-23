@@ -1,7 +1,7 @@
 using Projekthantering.Models;
 using Projekthantering.Repositories;
 using Projekthantering.Shared.DTOs;
-     
+
 
 namespace Projekthantering.Services;
 
@@ -26,46 +26,58 @@ public class BoardService : IBoardService
         return boards.Select(MapToDto).ToList();
     }
 
-    public async Task<BoardDto?> GetBoardByIdAsync(int id)
+    public async Task<BoardDto?> GetBoardByIdAsync(int id, int userId)
     {
         var board = await _boardRepository.GetByIdAsync(id);
-        return board is null ? null : MapToDto(board);
+        if (board is null) return null;
+
+        var hasAccess = board.OwnerId == userId || board.Members.Any(m => m.UserId == userId);
+        if (!hasAccess) return null;
+
+        return MapToDto(board);
     }
 
     public async Task<BoardDto> CreateBoardAsync(CreateBoardRequest request, int ownerId)
     {
         var board = new Board
         {
-            Title       = request.Title,
+            Title = request.Title,
             Description = request.Description,
-            OwnerId     = ownerId
+            OwnerId = ownerId
         };
 
         var created = await _boardRepository.CreateAsync(board);
         return MapToDto(created);
     }
 
-    public async Task<BoardDto?> UpdateBoardAsync(int id, UpdateBoardRequest request)
+    public async Task<BoardDto?> UpdateBoardAsync(int id, UpdateBoardRequest request, int userId)
     {
         var board = await _boardRepository.GetByIdAsync(id);
         if (board is null) return null;
+        if (board.OwnerId != userId) return null;
 
-        board.Title       = request.Title;
+        board.Title = request.Title;
         board.Description = request.Description;
 
         var updated = await _boardRepository.UpdateAsync(board);
         return MapToDto(updated);
     }
 
-    public async Task<bool> DeleteBoardAsync(int id)
-        => await _boardRepository.DeleteAsync(id);
+    public async Task<bool> DeleteBoardAsync(int id, int userId)
+    {
+        var board = await _boardRepository.GetByIdAsync(id);
+        if (board is null) return false;
+        if (board.OwnerId != userId) return false;
 
+        var delete = await _boardRepository.DeleteAsync(id);
+        return delete;
+    }
     private static BoardDto MapToDto(Board board) => new()
     {
-        Id          = board.Id,
-        Title       = board.Title,
+        Id = board.Id,
+        Title = board.Title,
         Description = board.Description,
-        OwnerName   = board.Owner.Username,
-        CreatedAt   = board.CreatedAt
+        OwnerName = board.Owner.Username,
+        CreatedAt = board.CreatedAt
     };
 }
