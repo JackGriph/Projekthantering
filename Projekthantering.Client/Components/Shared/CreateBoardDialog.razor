@@ -1,0 +1,44 @@
+@using Projekthantering.Shared.DTOs
+@using Projekthantering.Client.Services
+@inject IBoardService BoardService
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Skapa ny tavla</h5>
+        <EditForm Model="createRequest" OnValidSubmit="HandleSubmit"                  FormName="create-board">
+            <DataAnnotationsValidator />
+            <div class="mb-3">
+                <label class="form-label">Titel</label>
+                <InputText @bind-Value="createRequest.Title" class="form-control" />
+                <ValidationMessage For="() => createRequest.Title" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Beskrivning (valfritt)</label>
+                <InputTextArea @bind-Value="createRequest.Description"                               class="form-control" rows="2" />
+            </div>
+            <button type="submit" class="btn btn-success me-2">Skapa</button>
+            <button type="button" class="btn btn-secondary"                    @onclick="HandleCancel">Avbryt</button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnCreated { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private CreateBoardRequest createRequest = new();
+
+    private async Task HandleSubmit()
+    {
+        var result = await BoardService.CreateBoardAsync(createRequest);
+        if (result is null) return;
+        createRequest = new();
+        await OnCreated.InvokeAsync();
+    }
+
+    private async Task HandleCancel()
+    {
+        createRequest = new();
+        await OnCancel.InvokeAsync();
+    }
+}

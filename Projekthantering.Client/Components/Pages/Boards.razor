@@ -21,29 +21,9 @@
 
 @if (showCreateForm)
 {
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5 class="card-title">Skapa ny tavla</h5>
-            <EditForm Model="createRequest" OnValidSubmit="HandleCreateBoard"
-                      FormName="create-board">
-                <DataAnnotationsValidator />
-                <div class="mb-3">
-                    <label class="form-label">Titel</label>
-                    <InputText @bind-Value="createRequest.Title" class="form-control" />
-                    <ValidationMessage For="() => createRequest.Title" />
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Beskrivning (valfritt)</label>
-                    <InputTextArea @bind-Value="createRequest.Description"
-                                   class="form-control" rows="2" />
-                </div>
-                <button type="submit" class="btn btn-success me-2">Skapa</button>
-                <button type="button" class="btn btn-secondary"
-                        @onclick="CancelCreate">Avbryt</button>
-            </EditForm>
-        </div>
-    </div>
+    <CreateBoardDialog OnCreated="HandleBoardCreated" OnCancel="HandleBoardCancelled" />
 }
+
 
 @if (boards == null)
 {
@@ -59,37 +39,15 @@ else
         @foreach (var board in boards)
         {
             <div class="col">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">@board.Title</h5>
-                        @if (!string.IsNullOrEmpty(board.Description))
-                        {
-                            <p class="card-text text-muted">@board.Description</p>
-                        }
-                        <p class="card-text">
-                            <small class="text-muted">
-                                Skapad av @board.OwnerName
-                                � @board.CreatedAt.ToLocalTime().ToString("d MMM yyyy")
-                            </small>
-                        </p>
-                    </div>
-                    <div class="card-footer d-flex justify-content-between">
-                        <a class="btn btn-outline-primary btn-sm"
-                           href="/boards/@board.Id">�ppna</a>
-                        <button class="btn btn-outline-danger btn-sm"
-                                @onclick="() => HandleDeleteBoard(board.Id)">
-                            Ta bort
-                        </button>
-                    </div>
-                </div>
+                <BoardCard Board="board" OnDelete="HandleDeleteBoard" />
             </div>
+
         }
     </div>
 }
 
 @code {
     private List<BoardDto>? boards;
-    private CreateBoardRequest createRequest = new();
     private bool showCreateForm;
     private string? errorMessage;
 
@@ -110,19 +68,6 @@ else
         }
     }
 
-    private async Task HandleCreateBoard()
-    {
-        errorMessage = null;
-        var result = await BoardService.CreateBoardAsync(createRequest);
-        if (result == null)
-        {
-            errorMessage = "Kunde inte skapa tavlan.";
-            return;
-        }
-        createRequest = new();
-        showCreateForm = false;
-        await LoadBoards();
-    }
 
     private async Task HandleDeleteBoard(int id)
     {
@@ -136,9 +81,15 @@ else
         await LoadBoards();
     }
 
-    private void CancelCreate()
+    private async Task HandleBoardCreated()
     {
-        createRequest = new();
+        showCreateForm = false;
+        await LoadBoards();
+    }
+
+    private void HandleBoardCancelled()
+    {
         showCreateForm = false;
     }
+
 }

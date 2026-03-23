@@ -1,0 +1,28 @@
+@using Projekthantering.Shared.DTOs
+
+<div class="card h-100 shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title">@Board.Title</h5>
+        @if (!string.IsNullOrEmpty(Board.Description))
+        {
+            <p class="card-text text-muted">@Board.Description</p>
+        }
+        <p class="card-text">
+            <small class="text-muted">
+                Skapad av @Board.OwnerName
+                &mdash; @Board.CreatedAt.ToLocalTime().ToString("d MMM yyyy")
+            </small>
+        </p>
+    </div>
+    <div class="card-footer d-flex justify-content-between">
+        <a class="btn btn-outline-primary btn-sm"      href="/boards/@Board.Id">Öppna</a>
+        <button class="btn btn-outline-danger btn-sm"            @onclick="() => OnDelete.InvokeAsync(Board.Id)">
+            Ta bort
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public BoardDto Board { get; set; } = default!;
+    [Parameter] public EventCallback<int> OnDelete { get; set; }
+}
