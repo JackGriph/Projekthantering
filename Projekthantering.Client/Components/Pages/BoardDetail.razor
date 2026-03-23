@@ -14,8 +14,7 @@
 {
     <div class="alert alert-danger alert-dismissible">
         @errorMessage
-        <button type="button" class="btn-close"
-                @onclick="() => errorMessage = null"></button>
+        <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
     </div>
 }
 
@@ -33,11 +32,11 @@ else if (board != null)
     @* ?? Board header ?? *@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-            <a href="/boards" class="text-muted text-decoration-none me-2">? Tavlor</a>
+            <a href="/boards" class="text-muted text-decoration-none me-2"><i class="bi bi-arrow-left"></i> Tavlor
+            </a>
             <h2 class="d-inline mb-0">@board.Title</h2>
         </div>
-        <button class="btn btn-primary btn-sm"
-                @onclick="() => showAddList = true">+ Ny lista</button>
+        <button class="btn btn-primary btn-sm" @onclick="() => showAddList = true">+ Ny lista</button>
     </div>
 
     @if (!string.IsNullOrEmpty(board.Description))
@@ -50,16 +49,13 @@ else if (board != null)
     {
         <div class="card mb-3" style="max-width:272px">
             <div class="card-body py-2">
-                <EditForm Model="newListRequest" OnValidSubmit="HandleCreateList"
-                          FormName="add-list">
+                <EditForm Model="newListRequest" OnValidSubmit="HandleCreateList" FormName="add-list">
                     <DataAnnotationsValidator />
-                    <InputText @bind-Value="newListRequest.Title"
-                               class="form-control form-control-sm mb-2"
+                    <InputText @bind-Value="newListRequest.Title" class="form-control form-control-sm mb-2"
                                placeholder="Listtitel..." />
                     <ValidationMessage For="() => newListRequest.Title" />
-                    <button type="submit" class="btn btn-success btn-sm me-1">L�gg till</button>
-                    <button type="button" class="btn btn-secondary btn-sm"
-                            @onclick="CancelAddList">Avbryt</button>
+                    <button type="submit" class="btn btn-success btn-sm me-1">Lägg till</button>
+                    <button type="button" class="btn btn-secondary btn-sm" @onclick="CancelAddList">Avbryt</button>
                 </EditForm>
             </div>
         </div>
@@ -69,9 +65,7 @@ else if (board != null)
     <div class="kanban-board">
         @foreach (var list in lists)
         {
-        <ListComponent List="list"
-                           OnListDeleted="HandleListDeleted"
-                           OnListUpdated="HandleListUpdated" />
+            <ListComponent List="list" OnListDeleted="HandleListDeleted" OnListUpdated="HandleListUpdated" />
         }
     </div>
 }
@@ -109,7 +103,7 @@ else if (board != null)
         catch (Exception ex)
         {
             Logger.LogError(ex, "Fel vid laddning av tavla {BoardId}", BoardId);
-            errorMessage = "Kunde inte ladda tavlan. Kontrollera anslutningen och f�rs�k igen.";
+            errorMessage = "Kunde inte ladda tavlan. Kontrollera anslutningen och försök igen.";
         }
         finally
         {
@@ -138,4 +132,3 @@ else if (board != null)
 
     private void CancelAddList() { showAddList = false; newListRequest = new(); }
 }
-

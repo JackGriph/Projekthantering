@@ -7,95 +7,94 @@
     @* ?? Column header ?? *@
     @if (isEditingTitle)
     {
-        <EditForm Model="editListRequest" OnValidSubmit="HandleUpdateList"
-                  FormName="@($"edit-list-{List.Id}")">
+        <EditForm Model="editListRequest" OnValidSubmit="HandleUpdateList" FormName="@($"edit-list-{List.Id}")">
             <DataAnnotationsValidator />
             <div class="input-group input-group-sm mb-2">
                 <InputText @bind-Value="editListRequest.Title" class="form-control" />
-                <button type="submit" class="btn btn-success">?</button>
-                <button type="button" class="btn btn-secondary"
-                        @onclick="() => isEditingTitle = false">?</button>
-            </div>
-        </EditForm>
-    }
-    else
-    {
-        <div class="kanban-column-header">
-            <span>@List.Title</span>
-            <div>
-                <button class="btn btn-link btn-sm p-0 me-2 text-secondary"
-                        @onclick="StartEditTitle" title="Byt namn">??</button>
-                <button class="btn btn-link btn-sm p-0 text-danger"
-                        @onclick="HandleDeleteList" title="Ta bort lista">??</button>
-            </div>
-        </div>
-    }
+                <button type="submit" class="btn btn-success"><i class="bi bi-check"></i></button>
 
-    @* ?? Loading / error ?? *@
-    @if (isLoading)
-    {
-        <div class="text-center py-2">
-            <div class="spinner-border spinner-border-sm text-secondary" role="status">
-                <span class="visually-hidden">Laddar...</span>
-            </div>
-        </div>
-    }
+                <button type="button" class="btn btn-secondary" @onclick="() => isEditingTitle = false"><i
+                    class="bi bi-x"></i></button>
+
+                </div>
+            </EditForm>
+        }
     else
-    {
-        @* ?? Cards ?? *@
-        @if (cards.Count == 0)
         {
-            <p class="text-muted small text-center py-2 mb-1">Inga kort ännu — lägg till ett!</p>
+            <div class="kanban-column-header">
+                <span>@List.Title</span>
+                <div>
+                    <button class="btn btn-link btn-sm p-0 me-2 text-secondary" @onclick="StartEditTitle"
+                            title="Byt namn"><i class="bi bi-pencil"></i></button>
+
+                    <button class="btn btn-link btn-sm p-0 text-danger" @onclick="HandleDeleteList"
+                            title="Ta bort lista"><i class="bi bi-trash"></i></button>
+
+                </div>
+            </div>
+        }
+
+        @* ?? Loading / error ?? *@
+        @if (isLoading)
+        {
+            <div class="text-center py-2">
+                <div class="spinner-border spinner-border-sm text-secondary" role="status">
+                    <span class="visually-hidden">Laddar...</span>
+                </div>
+            </div>
         }
         else
         {
-            @foreach (var card in cards.OrderBy(c => c.Position))
+            @* ?? Cards ?? *@
+            @if (cards.Count == 0)
             {
-                <CardComponent Card="card"
-                               OnCardUpdated="HandleCardUpdated"
-                               OnCardDeleted="HandleCardDeleted" />
+                <p class="text-muted small text-center py-2 mb-1">Inga kort Ã¤nnu - lÃ¤gg till ett!</p>
+            }
+            else
+            {
+                @foreach (var card in cards.OrderBy(c => c.Position))
+                {
+                    <CardComponent Card="card" OnCardUpdated="HandleCardUpdated" OnCardDeleted="HandleCardDeleted" />
+                }
+            }
+
+            @* ?? Add card ?? *@
+            @if (isAddingCard)
+            {
+                <EditForm Model="newCardRequest" OnValidSubmit="HandleCreateCard" FormName="@($"add-card-{List.Id}")">
+                    <DataAnnotationsValidator />
+                    <InputText @bind-Value="newCardRequest.Title" class="form-control form-control-sm mb-1"
+                               placeholder="Korttitel..." />
+                    <ValidationMessage For="() => newCardRequest.Title" />
+                    <button type="submit" class="btn btn-success btn-sm me-1 mt-1" disabled="@isSubmitting">
+                        @if (isSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                        }
+                        LÃ¤gg till
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm mt-1" @onclick="CancelAddCard"
+                            disabled="@isSubmitting">Avbryt</button>
+                </EditForm>
+            }
+            else
+            {
+                <button class="btn btn-outline-secondary btn-sm w-100 mt-1" @onclick="() => isAddingCard = true">
+                    + LÃ¤gg till kort
+                </button>
             }
         }
 
-        @* ?? Add card ?? *@
-        @if (isAddingCard)
+        @* ?? Error banner ?? *@
+        @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <EditForm Model="newCardRequest" OnValidSubmit="HandleCreateCard"
-                      FormName="@($"add-card-{List.Id}")">
-                <DataAnnotationsValidator />
-                <InputText @bind-Value="newCardRequest.Title"
-                           class="form-control form-control-sm mb-1"
-                           placeholder="Korttitel..." />
-                <ValidationMessage For="() => newCardRequest.Title" />
-                <button type="submit" class="btn btn-success btn-sm me-1 mt-1"
-                        disabled="@isSubmitting">
-                    @if (isSubmitting) { <span class="spinner-border spinner-border-sm me-1" role="status"></span> }
-                    Lägg till
-                </button>
-                <button type="button" class="btn btn-secondary btn-sm mt-1"
-                        @onclick="CancelAddCard" disabled="@isSubmitting">Avbryt</button>
-            </EditForm>
+            <div class="alert alert-danger alert-dismissible py-1 px-2 mt-2 small">
+                @errorMessage
+                <button type="button" class="btn-close btn-sm" @onclick="() => errorMessage = null"></button>
+            </div>
         }
-        else
-        {
-            <button class="btn btn-outline-secondary btn-sm w-100 mt-1"
-                    @onclick="() => isAddingCard = true">
-                + Lägg till kort
-            </button>
-        }
-    }
 
-    @* ?? Error banner ?? *@
-    @if (!string.IsNullOrEmpty(errorMessage))
-    {
-        <div class="alert alert-danger alert-dismissible py-1 px-2 mt-2 small">
-            @errorMessage
-            <button type="button" class="btn-close btn-sm"
-                    @onclick="() => errorMessage = null"></button>
-        </div>
-    }
-
-</div>
+    </div>
 
 @code {
     [Parameter, EditorRequired] public BoardListDto List { get; set; } = default!;
@@ -132,7 +131,7 @@
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Fel vid laddning av kort för lista {ListId}", List.Id);
+            Logger.LogError(ex, "Fel vid laddning av kort fÃ¶r lista {ListId}", List.Id);
             errorMessage = "Kunde inte ladda kort.";
         }
         finally
@@ -155,7 +154,7 @@
         var response = await Http.PatchAsJsonAsync($"api/lists/{List.Id}", editListRequest);
         if (!response.IsSuccessStatusCode) { errorMessage = "Kunde inte uppdatera listan."; return; }
         var updated = await response.Content.ReadFromJsonAsync<BoardListDto>();
-        if (updated is null) { errorMessage = "Ogiltigt svar från servern."; return; }
+        if (updated is null) { errorMessage = "Ogiltigt svar frÃ¥n servern."; return; }
         isEditingTitle = false;
         await OnListUpdated.InvokeAsync(updated);
     }
@@ -179,7 +178,7 @@
             var response = await Http.PostAsJsonAsync($"api/lists/{List.Id}/cards", newCardRequest);
             if (!response.IsSuccessStatusCode) { errorMessage = "Kunde inte skapa kortet."; return; }
             var created = await response.Content.ReadFromJsonAsync<CardDto>();
-            if (created is null) { errorMessage = "Ogiltigt svar från servern."; return; }
+            if (created is null) { errorMessage = "Ogiltigt svar frÃ¥n servern."; return; }
             cards.Add(created);
             newCardRequest = new();
             isAddingCard = false;
