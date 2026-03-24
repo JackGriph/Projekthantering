@@ -1,28 +1,78 @@
 @using Projekthantering.Shared.DTOs
 
-<div class="card h-100 shadow-sm">
-    <div class="card-body">
-        <h5 class="card-title">@Board.Title</h5>
-        @if (!string.IsNullOrEmpty(Board.Description))
+<div class="board-card" @onclick="NavigateToBoard">
+    <div class="board-card-header">
+        <h5 class="board-card-title">@Board.Title</h5>
+        <div class="board-card-menu" @onclick="ToggleMenu" @onclick:stopPropagation="true">
+            <i class="bi bi-three-dots"></i>
+        </div>
+        @if (showMenu)
         {
-            <p class="card-text text-muted">@Board.Description</p>
+            <div class="board-card-dropdown" @onclick:stopPropagation="true">
+                <button class="dropdown-item" @onclick="HandleOpenBoard">
+                    <i class="bi bi-box-arrow-up-right"></i> Öppna
+                </button>
+                <button class="dropdown-item dropdown-item-danger" @onclick="HandleDelete">
+                    <i class="bi bi-trash"></i> Ta bort
+                </button>
+            </div>
         }
-        <p class="card-text">
-            <small class="text-muted">
-                Skapad av @Board.OwnerName
-                — @Board.CreatedAt.ToLocalTime().ToString("d MMM yyyy")
-            </small>
-        </p>
     </div>
-    <div class="card-footer d-flex justify-content-between">
-        <a class="btn btn-outline-primary btn-sm" href="/boards/@Board.Id">Öppna</a>
-        <button class="btn btn-outline-danger btn-sm" @onclick="() => OnDelete.InvokeAsync(Board.Id)">
-            Ta bort
-        </button>
+    <span class="board-card-meta">SENAST ÄNDRAD: @GetRelativeTime(Board.CreatedAt)</span>
+    @if (!string.IsNullOrEmpty(Board.Description))
+    {
+        <p class="board-card-desc">@Board.Description</p>
+    }
+    <div class="board-card-footer">
+        <div class="board-card-owner">
+            <i class="bi bi-person-circle"></i>
+            <span>@Board.OwnerName</span>
+        </div>
     </div>
 </div>
+
+@inject NavigationManager Navigation
 
 @code {
     [Parameter] public BoardDto Board { get; set; } = default!;
     [Parameter] public EventCallback<int> OnDelete { get; set; }
+
+    private bool showMenu;
+
+    private void ToggleMenu()
+    {
+        showMenu = !showMenu;
+    }
+
+    private void NavigateToBoard()
+    {
+        Navigation.NavigateTo($"/boards/{Board.Id}");
+    }
+
+    private void HandleOpenBoard()
+    {
+        showMenu = false;
+        Navigation.NavigateTo($"/boards/{Board.Id}");
+    }
+
+    private async Task HandleDelete()
+    {
+        showMenu = false;
+        await OnDelete.InvokeAsync(Board.Id);
+    }
+
+    private static string GetRelativeTime(DateTime dateTime)
+    {
+        var now = DateTime.UtcNow;
+        var local = dateTime.ToUniversalTime();
+        var diff = now - local;
+
+        if (diff.TotalMinutes < 1) return "JUST NU";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} MIN SEDAN";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours} TIMMAR SEDAN";
+        if (diff.TotalDays < 1.5) return "IGÅR";
+        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays} DAGAR SEDAN";
+        if (diff.TotalDays < 14) return "1 VECKA SEDAN";
+        return $"{(int)(diff.TotalDays / 7)} VECKOR SEDAN";
+    }
 }

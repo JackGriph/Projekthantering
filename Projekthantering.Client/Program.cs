@@ -26,9 +26,15 @@ public class Program
         builder.Services.AddScoped(sp =>
         {
             var tokenProvider = sp.GetRequiredService<TokenProvider>();
+            var innerHandler = new HttpClientHandler();
+            if (builder.Environment.IsDevelopment())
+            {
+                innerHandler.ServerCertificateCustomValidationCallback =
+                    HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+            }
             var handler = new AuthHeaderHandler(tokenProvider)
             {
-                InnerHandler = new HttpClientHandler()
+                InnerHandler = innerHandler
             };
             return new HttpClient(handler)
             {

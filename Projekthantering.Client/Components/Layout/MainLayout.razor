@@ -1,4 +1,4 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 
 <div class="page">
     <div class="sidebar">
@@ -6,11 +6,22 @@
     </div>
 
     <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+        <div class="top-row">
+            <h1 class="top-row-title">@GetPageTitle()</h1>
+            <div class="top-row-search">
+                <i class="bi bi-search"></i>
+                <input type="text" placeholder="Sök tavlor..." class="search-input" />
+            </div>
+            <div class="top-row-actions">
+                <button class="icon-btn"><i class="bi bi-bell"></i></button>
+                <button class="icon-btn"><i class="bi bi-gear"></i></button>
+                <div class="top-row-avatar">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+            </div>
         </div>
 
-        <article class="content px-4">
+        <article class="content">
             @Body
         </article>
     </main>
@@ -21,3 +32,13 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@inject NavigationManager Navigation
+
+@code {
+    private string GetPageTitle()
+    {
+        var uri = Navigation.ToBaseRelativePath(Navigation.Uri);
+        return uri.StartsWith("boards") ? "Mina Tavlor" : "Hem";
+    }
+}

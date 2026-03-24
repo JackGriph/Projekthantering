@@ -1,57 +1,103 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Projekthantering</a>
+@using Projekthantering.Client.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="sidebar-brand">
+    <div class="brand-icon">
+        <i class="bi bi-columns-gap"></i>
+    </div>
+    <div class="brand-text">
+        <span class="brand-name">The Fluid Architect</span>
+        <span class="brand-subtitle">ELITE EXECUTION</span>
     </div>
 </div>
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
+    <nav class="sidebar-nav">
+        <div class="nav-item">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Hem
+                <i class="bi bi-house-door"></i>
+                <span>Hem</span>
             </NavLink>
         </div>
 
-        <AuthorizeView>
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="boards">
-                        <span class="bi bi-kanban-fill-nav-menu" aria-hidden="true"></span> Tavlor
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <button class="btn btn-link nav-link" @onclick="HandleLogout">
-                        <span class="bi bi-box-arrow-right-nav-menu" aria-hidden="true"></span> Logga ut
-                    </button>
-                </div>
-            </Authorized>
-            <NotAuthorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="login">
-                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> Logga in
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="register">
-                        <span class="bi bi-person-plus-fill-nav-menu" aria-hidden="true"></span> Registrera
-                    </NavLink>
-                </div>
-            </NotAuthorized>
-        </AuthorizeView>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="boards">
+                <i class="bi bi-kanban"></i>
+                <span>Tavlor</span>
+            </NavLink>
+        </div>
     </nav>
+
+    <div class="sidebar-footer">
+        @if (isAuthenticated)
+        {
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+                <div class="user-info">
+                    <span class="user-name">@userName</span>
+                    <span class="user-plan">Pro Plan</span>
+                </div>
+            </div>
+            <button class="logout-btn" @onclick="HandleLogout">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logga ut</span>
+            </button>
+        }
+        else
+        {
+            <div class="nav-item">
+                <NavLink class="nav-link" href="login">
+                    <i class="bi bi-person"></i>
+                    <span>Logga in</span>
+                </NavLink>
+            </div>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="register">
+                    <i class="bi bi-person-plus"></i>
+                    <span>Registrera</span>
+                </NavLink>
+            </div>
+        }
+    </div>
 </div>
 
-@using Projekthantering.Client.Services
-@inject IAuthService AuthService
-@inject NavigationManager Navigation
-
 @code {
+    private bool isAuthenticated;
+    private string userName = "User Name";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+                var user = authState.User;
+                if (user.Identity?.IsAuthenticated == true)
+                {
+                    isAuthenticated = true;
+                    userName = user.Identity.Name ?? user.FindFirst("sub")?.Value ?? "User Name";
+                    StateHasChanged();
+                }
+            }
+            catch
+            {
+                // Not authenticated or JS interop not available
+            }
+        }
+    }
+
     private async Task HandleLogout()
     {
         await AuthService.LogoutAsync();
+        isAuthenticated = false;
         Navigation.NavigateTo("/login");
     }
 }
-

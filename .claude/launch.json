@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "API Server",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "Projekthantering/Projekthantering.Api.csproj", "--launch-profile", "https"],
+      "port": 7191
+    },
+    {
+      "name": "Blazor Client",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "Projekthantering.Client/Projekthantering.Client.csproj", "--launch-profile", "https"],
+      "port": 7147
+    }
+  ]
+}

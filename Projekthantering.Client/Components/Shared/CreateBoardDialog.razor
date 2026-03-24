@@ -2,10 +2,15 @@
 @using Projekthantering.Client.Services
 @inject IBoardService BoardService
 
-<div class="card mb-4">
-    <div class="card-body">
-        <h5 class="card-title">Skapa ny tavla</h5>
-        <EditForm Model="createRequest" OnValidSubmit="HandleSubmit"                  FormName="create-board">
+<div class="create-dialog-overlay" @onclick="HandleCancel">
+    <div class="create-dialog" @onclick:stopPropagation="true">
+        <div class="create-dialog-header">
+            <h5>Skapa ny tavla</h5>
+            <button type="button" class="create-dialog-close" @onclick="HandleCancel">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <EditForm Model="createRequest" OnValidSubmit="HandleSubmit" FormName="create-board">
             <DataAnnotationsValidator />
             <div class="mb-3">
                 <label class="form-label">Titel</label>
@@ -14,10 +19,12 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Beskrivning (valfritt)</label>
-                <InputTextArea @bind-Value="createRequest.Description"                               class="form-control" rows="2" />
+                <InputTextArea @bind-Value="createRequest.Description" class="form-control" rows="2" />
             </div>
-            <button type="submit" class="btn btn-success me-2">Skapa</button>
-            <button type="button" class="btn btn-secondary"                    @onclick="HandleCancel">Avbryt</button>
+            <div class="create-dialog-actions">
+                <button type="button" class="btn btn-secondary" @onclick="HandleCancel">Avbryt</button>
+                <button type="submit" class="btn btn-primary">Skapa</button>
+            </div>
         </EditForm>
     </div>
 </div>

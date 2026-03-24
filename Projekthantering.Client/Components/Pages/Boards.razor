@@ -4,14 +4,13 @@
 @using Projekthantering.Client.Services
 @inject IBoardService BoardService
 @inject NavigationManager Navigation
+@inject AuthStateProvider AuthState
 
 <PageTitle>Mina tavlor</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0">Mina tavlor</h2>
-    <button class="btn btn-primary" @onclick="() => showCreateForm = true">
-        + Ny tavla
-    </button>
+<div class="boards-welcome">
+    <h2 class="welcome-title">Välkommen tillbaka</h2>
+    <p class="welcome-subtitle">Hantera dina pågående arkitektoniska projekt och utförandeplaner med precision.</p>
 </div>
 
 @if (!string.IsNullOrEmpty(errorMessage))
@@ -24,24 +23,23 @@
     <CreateBoardDialog OnCreated="HandleBoardCreated" OnCancel="HandleBoardCancelled" />
 }
 
-
 @if (boards == null)
 {
-    <p><em>Laddar...</em></p>
-}
-else if (boards.Count == 0)
-{
-    <p class="text-muted">Du har inga tavlor ännu. Skapa en ovan!</p>
+    <p class="text-muted"><em>Laddar...</em></p>
 }
 else
 {
-    <div class="row row-cols-1 row-cols-md-3 g-4">
+    <div class="board-grid">
+        <div class="board-card board-card-create" @onclick="() => showCreateForm = true">
+            <div class="create-icon">
+                <i class="bi bi-plus-lg"></i>
+            </div>
+            <span class="create-label">Skapa ny tavla</span>
+        </div>
+
         @foreach (var board in boards)
         {
-            <div class="col">
-                <BoardCard Board="board" OnDelete="HandleDeleteBoard" />
-            </div>
-
+            <BoardCard Board="board" OnDelete="HandleDeleteBoard" />
         }
     </div>
 }
@@ -50,10 +48,18 @@ else
     private List<BoardDto>? boards;
     private bool showCreateForm;
     private string? errorMessage;
+    private bool _loaded;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await LoadBoards();
+        if (firstRender)
+        {
+            // Säkerställ att token laddats från ProtectedLocalStorage (kräver JS interop)
+            await AuthState.GetAuthenticationStateAsync();
+            await LoadBoards();
+            _loaded = true;
+            StateHasChanged();
+        }
     }
 
     private async Task LoadBoards()
@@ -67,7 +73,6 @@ else
             errorMessage = "Kunde inte ladda tavlor.";
         }
     }
-
 
     private async Task HandleDeleteBoard(int id)
     {
@@ -91,5 +96,4 @@ else
     {
         showCreateForm = false;
     }
-
 }

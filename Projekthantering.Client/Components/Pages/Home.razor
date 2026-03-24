@@ -1,7 +1,95 @@
-﻿@page "/"
+@page "/"
+@rendermode InteractiveServer
+@using Projekthantering.Client.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Hem</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="boards-welcome">
+    <h2 class="welcome-title">Välkommen tillbaka</h2>
+    <p class="welcome-subtitle">Hantera dina pågående arkitektoniska projekt och utförandeplaner med precision.</p>
+</div>
 
-Welcome to your new app.
+<div class="home-actions">
+    <a href="/boards" class="home-action-card">
+        <div class="home-action-icon">
+            <i class="bi bi-kanban"></i>
+        </div>
+        <div class="home-action-text">
+            <h5>Mina Tavlor</h5>
+            <p>Visa och hantera dina projekttavlor</p>
+        </div>
+        <i class="bi bi-chevron-right home-action-arrow"></i>
+    </a>
+
+    @if (isAuthenticated)
+    {
+        <div class="home-action-card home-action-logout" @onclick="HandleLogout">
+            <div class="home-action-icon home-action-icon-logout">
+                <i class="bi bi-box-arrow-right"></i>
+            </div>
+            <div class="home-action-text">
+                <h5>Logga ut</h5>
+                <p>Logga ut från ditt konto</p>
+            </div>
+            <i class="bi bi-chevron-right home-action-arrow"></i>
+        </div>
+    }
+    else
+    {
+        <a href="/login" class="home-action-card">
+            <div class="home-action-icon">
+                <i class="bi bi-person"></i>
+            </div>
+            <div class="home-action-text">
+                <h5>Logga in</h5>
+                <p>Logga in för att komma åt dina tavlor</p>
+            </div>
+            <i class="bi bi-chevron-right home-action-arrow"></i>
+        </a>
+        <a href="/register" class="home-action-card">
+            <div class="home-action-icon">
+                <i class="bi bi-person-plus"></i>
+            </div>
+            <div class="home-action-text">
+                <h5>Registrera</h5>
+                <p>Skapa ett nytt konto</p>
+            </div>
+            <i class="bi bi-chevron-right home-action-arrow"></i>
+        </a>
+    }
+</div>
+
+@code {
+    private bool isAuthenticated;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+                if (authState.User.Identity?.IsAuthenticated == true)
+                {
+                    isAuthenticated = true;
+                    StateHasChanged();
+                }
+            }
+            catch
+            {
+                // JS interop not available during prerender
+            }
+        }
+    }
+
+    private async Task HandleLogout()
+    {
+        await AuthService.LogoutAsync();
+        isAuthenticated = false;
+        Navigation.NavigateTo("/login");
+    }
+}
