@@ -31,6 +31,14 @@ public class CreateCardRequest
     public int? AssigneeId { get; set; }
 }
 
+public class MoveCardRequest
+{
+    [Required(ErrorMessage = "Mål-lista krävs.")]
+    public int TargetListId { get; set; }
+
+    public int Position { get; set; }
+}
+
 public class UpdateCardRequest
 {
     [Required(ErrorMessage = "Titel krävs.")]

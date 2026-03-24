@@ -93,11 +93,36 @@ h1:focus {
     padding: 0.5rem 0.625rem;
     margin-bottom: 0.5rem;
     box-shadow: 0 1px 3px rgba(0,0,0,.1);
-    cursor: default;
+    cursor: grab;
+    transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
 .kanban-card:hover {
     box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+
+.kanban-card:active {
+    cursor: grabbing;
+}
+
+/* Drag-and-drop styles */
+.kanban-card.dragging {
+    opacity: 0.4;
+    transform: scale(0.95);
+    box-shadow: 0 4px 12px rgba(0,0,0,.2);
+}
+
+.kanban-column.drag-over {
+    background-color: #dbeafe;
+    border: 2px dashed #3b82f6;
+    transition: background-color 0.2s, border 0.2s;
+}
+
+.drop-placeholder {
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 1rem;
+    color: #94a3b8;
 }
 
 /* ?? Card status badges ?? */

@@ -1,6 +1,10 @@
 @inject HttpClient Http
 
-<div class="kanban-card">
+<div class="kanban-card @(isDragging ? "dragging" : "")"
+     draggable="true"
+     @ondragstart="HandleDragStart"
+     @ondragend="HandleDragEnd">
+
     @if (isEditing)
     {
         <EditForm Model="editRequest" OnValidSubmit="HandleUpdate" FormName="@($"edit-card-{Card.Id}")">
@@ -83,11 +87,24 @@
     [Parameter, EditorRequired] public CardDto Card { get; set; } = default!;
     [Parameter] public EventCallback<CardDto> OnCardUpdated { get; set; }
     [Parameter] public EventCallback<int> OnCardDeleted { get; set; }
+    [Parameter] public EventCallback<CardDto> OnDragStarted { get; set; }
 
     private bool isEditing;
     private bool isSubmitting;
+    private bool isDragging;
     private UpdateCardRequest editRequest = new();
     private string? errorMessage;
+
+    private async Task HandleDragStart()
+    {
+        isDragging = true;
+        await OnDragStarted.InvokeAsync(Card);
+    }
+
+    private void HandleDragEnd()
+    {
+        isDragging = false;
+    }
 
     private void StartEdit()
     {

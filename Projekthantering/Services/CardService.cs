@@ -85,6 +85,21 @@ public class CardService : ICardService
     public async Task<bool> DeleteCardAsync(int id)
         => await _cardRepository.DeleteAsync(id);
 
+    public async Task<CardDto?> MoveCardAsync(int id, MoveCardRequest request)
+    {
+        var card = await _cardRepository.GetByIdAsync(id);
+        if (card is null) return null;
+
+        var targetListExists = await _cardRepository.ListExistsAsync(request.TargetListId);
+        if (!targetListExists) return null;
+
+        card.ListId = request.TargetListId;
+        card.Position = request.Position;
+
+        var updated = await _cardRepository.UpdateAsync(card);
+        return MapToDto(updated);
+    }
+
     private static CardDto MapToDto(Card card) => new()
     {
         Id = card.Id,
