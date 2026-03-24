@@ -68,6 +68,20 @@ public class CardsController : ControllerBase
         return NoContent();
     }
 
+    // PUT /api/cards/{id}/move
+    [HttpPut("api/cards/{id}/move")]
+    public async Task<ActionResult<CardDto>> MoveCard(int id, MoveCardRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var card = await _cardService.MoveCardAsync(id, request);
+        if (card is null)
+            return NotFound(new { message = "Kortet eller mål-listan hittades inte." });
+
+        return Ok(card);
+    }
+
     // Helper action used by CreatedAtAction in CreateCard
     [HttpGet("api/cards/{id}")]
     public async Task<ActionResult<CardDto>> GetCard(int id)

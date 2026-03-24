@@ -38,4 +38,11 @@ public class CardService : ICardService
         var response = await _http.DeleteAsync($"api/cards/{id}");
         return response.IsSuccessStatusCode;
     }
+
+    public async Task<CardDto?> MoveCardAsync(int id, MoveCardRequest request)
+    {
+        var response = await _http.PutAsJsonAsync($"api/cards/{id}/move", request);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CardDto>();
+    }
 }

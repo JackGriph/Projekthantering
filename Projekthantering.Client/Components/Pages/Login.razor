@@ -64,7 +64,7 @@
                         <div class="auth-input-wrapper">
                             <i class="bi bi-envelope"></i>
                             <InputText @bind-Value="registerRequest.Email"
-                                       class="auth-input" placeholder="namn@foretag.se" />
+                                       class="auth-input" placeholder="namn@företag.se" />
                         </div>
                         <ValidationMessage For="() => registerRequest.Email" />
                     </div>
@@ -129,7 +129,7 @@
                             <i class="bi bi-lock"></i>
                             <InputText @bind-Value="loginRequest.Password"
                                        class="auth-input" type="@(showPassword ? "text" : "password")"
-                                       placeholder="Ditt losenord"
+                                       placeholder="Ditt lösenord"
                                        autocomplete="current-password" />
                             <button type="button" class="auth-eye-btn" @onclick="TogglePassword">
                                 <i class="bi @(showPassword ? "bi-eye-slash" : "bi-eye")"></i>

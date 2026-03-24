@@ -4,12 +4,13 @@
 @using Projekthantering.Client.Components.Shared
 @inject IBoardService BoardService
 @inject IListService ListService
+@inject ICardService CardService
 @inject NavigationManager Navigation
 @inject ILogger<BoardDetail> Logger
 
 <PageTitle>@(board?.Title ?? "Tavla")</PageTitle>
 
-@* ?? Error banner ?? *@
+@* Error banner *@
 @if (!string.IsNullOrEmpty(errorMessage))
 {
     <div class="alert alert-danger alert-dismissible">
@@ -18,7 +19,7 @@
     </div>
 }
 
-@* ?? Loading spinner ?? *@
+@* Loading spinner *@
 @if (isLoading)
 {
     <div class="d-flex justify-content-center align-items-center" style="min-height:40vh">
@@ -29,7 +30,7 @@
 }
 else if (board != null)
 {
-    @* ?? Board header ?? *@
+    @* Board header *@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
             <a href="/boards" class="text-muted text-decoration-none me-2"><i class="bi bi-arrow-left"></i> Tavlor
@@ -44,11 +45,22 @@ else if (board != null)
         <p class="text-muted mb-3">@board.Description</p>
     }
 
-    @* ?? Add-list form ?? *@
-    @if (showAddList)
-    {
-        <div class="card mb-3" style="max-width:272px">
-            <div class="card-body py-2">
+    @* Kanban board - one ListComponent per list *@
+    <div class="kanban-board">
+        @foreach (var list in lists)
+        {
+            <ListComponent List="list"
+                           OnListDeleted="HandleListDeleted"
+                           OnListUpdated="HandleListUpdated"
+                           DraggedCard="draggedCard"
+                           OnCardDragStarted="HandleCardDragStarted"
+                           OnCardDropped="HandleCardDropped" />
+        }
+
+        @* Add-list form - inside the board as a column *@
+        @if (showAddList)
+        {
+            <div class="kanban-column">
                 <EditForm Model="newListRequest" OnValidSubmit="HandleCreateList" FormName="add-list">
                     <DataAnnotationsValidator />
                     <InputText @bind-Value="newListRequest.Title" class="form-control form-control-sm mb-2"
@@ -58,14 +70,6 @@ else if (board != null)
                     <button type="button" class="btn btn-secondary btn-sm" @onclick="CancelAddList">Avbryt</button>
                 </EditForm>
             </div>
-        </div>
-    }
-
-    @* ?? Kanban board � one ListComponent per list ?? *@
-    <div class="kanban-board">
-        @foreach (var list in lists)
-        {
-            <ListComponent List="list" OnListDeleted="HandleListDeleted" OnListUpdated="HandleListUpdated" />
         }
     </div>
 }
@@ -80,6 +84,9 @@ else if (board != null)
 
     private bool showAddList;
     private CreateListRequest newListRequest = new();
+
+    // Drag-and-drop state
+    private CardDto? draggedCard;
 
     protected override async Task OnInitializedAsync()
     {
@@ -131,4 +138,49 @@ else if (board != null)
     }
 
     private void CancelAddList() { showAddList = false; newListRequest = new(); }
+
+    // Drag-and-drop handlers
+    private void HandleCardDragStarted(CardDto card)
+    {
+        draggedCard = card;
+    }
+
+    private async Task HandleCardDropped(int targetListId)
+    {
+        if (draggedCard is null) return;
+        if (draggedCard.ListId == targetListId)
+        {
+            draggedCard = null;
+            return;
+        }
+
+        var cardToMove = draggedCard;
+        draggedCard = null;
+
+        try
+        {
+            var moveRequest = new MoveCardRequest
+            {
+                TargetListId = targetListId,
+                Position = 0
+            };
+
+            var result = await CardService.MoveCardAsync(cardToMove.Id, moveRequest);
+            if (result != null)
+            {
+                // Ladda om alla listor för att få rätt state
+                lists = await ListService.GetListsAsync(BoardId);
+                StateHasChanged();
+            }
+            else
+            {
+                errorMessage = "Kunde inte flytta kortet.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Fel vid flytt av kort {CardId}", cardToMove.Id);
+            errorMessage = "Kunde inte flytta kortet.";
+        }
+    }
 }
