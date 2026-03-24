@@ -1,6 +1,6 @@
 ﻿<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">Projekthantering.Client</a>
+        <a class="navbar-brand" href="">Projekthantering</a>
     </div>
 </div>
 
@@ -10,21 +10,48 @@
     <nav class="nav flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Hem
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="boards">
+                        <span class="bi bi-kanban-fill-nav-menu" aria-hidden="true"></span> Tavlor
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <button class="btn btn-link nav-link" @onclick="HandleLogout">
+                        <span class="bi bi-box-arrow-right-nav-menu" aria-hidden="true"></span> Logga ut
+                    </button>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="login">
+                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> Logga in
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="register">
+                        <span class="bi bi-person-plus-fill-nav-menu" aria-hidden="true"></span> Registrera
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
     </nav>
 </div>
+
+@using Projekthantering.Client.Services
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+@code {
+    private async Task HandleLogout()
+    {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/login");
+    }
+}
 

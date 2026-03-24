@@ -30,6 +30,10 @@ public class AppDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Card>()
+            .Property(c => c.Status)
+            .HasDefaultValue(CardStatus.Todo);
+
+        modelBuilder.Entity<Card>()
             .HasOne(c => c.Assignee)
             .WithMany(u => u.AssignedCards)
             .HasForeignKey(c => c.AssigneeId)

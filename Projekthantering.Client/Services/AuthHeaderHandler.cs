@@ -1,32 +1,23 @@
 using System.Net.Http.Headers;
-using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
 namespace Projekthantering.Client.Services;
 
 public class AuthHeaderHandler : DelegatingHandler
 {
-    private readonly ProtectedLocalStorage _localStorage;
+    private readonly TokenProvider _tokenProvider;
 
-    public AuthHeaderHandler(ProtectedLocalStorage localStorage)
+    public AuthHeaderHandler(TokenProvider tokenProvider)
     {
-        _localStorage = localStorage;
+        _tokenProvider = tokenProvider;
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        try
+        if (!string.IsNullOrEmpty(_tokenProvider.AccessToken))
         {
-            var result = await _localStorage.GetAsync<string>("accessToken");
-            if (!string.IsNullOrEmpty(result.Value))
-            {
-                request.Headers.Authorization =
-                    new AuthenticationHeaderValue("Bearer", result.Value);
-            }
-        }
-        catch (InvalidOperationException)
-        {
-            // JS interop not available during prerendering
+            request.Headers.Authorization =
+                new AuthenticationHeaderValue("Bearer", _tokenProvider.AccessToken);
         }
 
         return await base.SendAsync(request, cancellationToken);

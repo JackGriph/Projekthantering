@@ -13,23 +13,34 @@ public class Program
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
 
-        // Auth (ProtectedLocalStorage är redan registrerad av AddRazorComponents)
+        // Auth
         builder.Services.AddAuthorizationCore();
+        builder.Services.AddCascadingAuthenticationState();
+        builder.Services.AddScoped<TokenProvider>();
         builder.Services.AddScoped<AuthStateProvider>();
         builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
             sp.GetRequiredService<AuthStateProvider>());
 
-        // HttpClient mot API
-        builder.Services.AddScoped<AuthHeaderHandler>();
-        builder.Services.AddHttpClient("API", client =>
-        {
-            client.BaseAddress = new Uri("https://localhost:7191");
-        }).AddHttpMessageHandler<AuthHeaderHandler>();
+        // HttpClient mot API – skapas direkt i circuit-scopen
+        // (IHttpClientFactory pooler handlers separat, vilket bryter scoped TokenProvider)
         builder.Services.AddScoped(sp =>
-            sp.GetRequiredService<IHttpClientFactory>().CreateClient("API"));
+        {
+            var tokenProvider = sp.GetRequiredService<TokenProvider>();
+            var handler = new AuthHeaderHandler(tokenProvider)
+            {
+                InnerHandler = new HttpClientHandler()
+            };
+            return new HttpClient(handler)
+            {
+                BaseAddress = new Uri("https://localhost:7191")
+            };
+        });
 
         // Services
         builder.Services.AddScoped<IAuthService, AuthService>();
+        builder.Services.AddScoped<IBoardService, BoardService>();
+        builder.Services.AddScoped<IListService, ListService>();
+        builder.Services.AddScoped<ICardService, CardService>();
 
         var app = builder.Build();
 

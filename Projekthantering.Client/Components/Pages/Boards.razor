@@ -1,0 +1,95 @@
+@page "/boards"
+@rendermode InteractiveServer
+@using Projekthantering.Shared.DTOs
+@using Projekthantering.Client.Services
+@inject IBoardService BoardService
+@inject NavigationManager Navigation
+
+<PageTitle>Mina tavlor</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Mina tavlor</h2>
+    <button class="btn btn-primary" @onclick="() => showCreateForm = true">
+        + Ny tavla
+    </button>
+</div>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (showCreateForm)
+{
+    <CreateBoardDialog OnCreated="HandleBoardCreated" OnCancel="HandleBoardCancelled" />
+}
+
+
+@if (boards == null)
+{
+    <p><em>Laddar...</em></p>
+}
+else if (boards.Count == 0)
+{
+    <p class="text-muted">Du har inga tavlor ännu. Skapa en ovan!</p>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        @foreach (var board in boards)
+        {
+            <div class="col">
+                <BoardCard Board="board" OnDelete="HandleDeleteBoard" />
+            </div>
+
+        }
+    </div>
+}
+
+@code {
+    private List<BoardDto>? boards;
+    private bool showCreateForm;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBoards();
+    }
+
+    private async Task LoadBoards()
+    {
+        try
+        {
+            boards = await BoardService.GetBoardsAsync();
+        }
+        catch
+        {
+            errorMessage = "Kunde inte ladda tavlor.";
+        }
+    }
+
+
+    private async Task HandleDeleteBoard(int id)
+    {
+        errorMessage = null;
+        var ok = await BoardService.DeleteBoardAsync(id);
+        if (!ok)
+        {
+            errorMessage = "Kunde inte ta bort tavlan.";
+            return;
+        }
+        await LoadBoards();
+    }
+
+    private async Task HandleBoardCreated()
+    {
+        showCreateForm = false;
+        await LoadBoards();
+    }
+
+    private void HandleBoardCancelled()
+    {
+        showCreateForm = false;
+    }
+
+}

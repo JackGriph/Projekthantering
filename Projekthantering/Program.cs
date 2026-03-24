@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Projekthantering.Data;
 using Projekthantering.Services;
 using Projekthantering.Repositories;
+using System.Security.Claims;
 
 namespace Projekthantering;
 
@@ -56,8 +57,14 @@ public class Program
         });
 
         // DI - Services och Repositories
-         builder.Services.AddScoped<IAuthService, AuthService>();
-         builder.Services.AddScoped<IUserRepository, UserRepository>();
+        builder.Services.AddScoped<IAuthService, AuthService>();
+        builder.Services.AddScoped<IUserRepository, UserRepository>();
+        builder.Services.AddScoped<IBoardRepository, BoardRepository>();
+        builder.Services.AddScoped<IBoardService, BoardService>();
+        builder.Services.AddScoped<IListRepository, ListRepository>();
+        builder.Services.AddScoped<IListService, ListService>();
+        builder.Services.AddScoped<ICardRepository, CardRepository>();
+        builder.Services.AddScoped<ICardService, CardService>();
         
 
         var app = builder.Build();
