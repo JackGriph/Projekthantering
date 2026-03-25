@@ -22,6 +22,12 @@ public class CreateBoardRequest
     public string? Description { get; set; }
 }
 
+public class UserDto
+{
+    public int Id { get; set; }
+    public string Username { get; set; } = string.Empty;
+}
+
 public class UpdateBoardRequest
 {
     [Required(ErrorMessage = "Titel krävs.")]

@@ -8,16 +8,19 @@
 
 <PageTitle>Mina tavlor</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0">Mina tavlor</h2>
-    <button class="btn btn-primary" @onclick="() => showCreateForm = true">
-        + Ny tavla
-    </button>
+<h4 class="boards-page-title">Mina Tavlor</h4>
+
+<div class="boards-welcome">
+    <h2>Välkommen tillbaka</h2>
+    <p>Hantera dina pågående projekt och tavlor.</p>
 </div>
 
 @if (!string.IsNullOrEmpty(errorMessage))
 {
-    <div class="alert alert-danger">@errorMessage</div>
+    <div class="alert alert-danger alert-dismissible">
+        @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+    </div>
 }
 
 @if (showCreateForm)
@@ -25,24 +28,25 @@
     <CreateBoardDialog OnCreated="HandleBoardCreated" OnCancel="HandleBoardCancelled" />
 }
 
-
 @if (boards == null)
 {
-    <p><em>Laddar...</em></p>
-}
-else if (boards.Count == 0)
-{
-    <p class="text-muted">Du har inga tavlor ännu. Skapa en ovan!</p>
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-secondary" role="status">
+            <span class="visually-hidden">Laddar...</span>
+        </div>
+    </div>
 }
 else
 {
-    <div class="row row-cols-1 row-cols-md-3 g-4">
+    <div class="boards-grid">
+        <div class="board-card-create" @onclick="() => showCreateForm = true">
+            <div class="board-card-create-icon">+</div>
+            <div class="board-card-create-text">Skapa ny tavla</div>
+        </div>
+
         @foreach (var board in boards)
         {
-            <div class="col">
-                <BoardCard Board="board" OnDelete="HandleDeleteBoard" />
-            </div>
-
+            <BoardCard Board="board" OnDelete="HandleDeleteBoard" />
         }
     </div>
 }
@@ -69,16 +73,11 @@ else
         }
     }
 
-
     private async Task HandleDeleteBoard(int id)
     {
         errorMessage = null;
         var ok = await BoardService.DeleteBoardAsync(id);
-        if (!ok)
-        {
-            errorMessage = "Kunde inte ta bort tavlan.";
-            return;
-        }
+        if (!ok) { errorMessage = "Kunde inte ta bort tavlan."; return; }
         await LoadBoards();
     }
 
@@ -88,9 +87,5 @@ else
         await LoadBoards();
     }
 
-    private void HandleBoardCancelled()
-    {
-        showCreateForm = false;
-    }
-
+    private void HandleBoardCancelled() => showCreateForm = false;
 }
