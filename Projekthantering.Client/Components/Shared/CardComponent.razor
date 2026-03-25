@@ -33,9 +33,13 @@
 
             <div class="mb-2">
                 <label class="form-label form-label-sm mb-0">Tilldelad</label>
-                <InputText @bind-Value="editRequest.AssignedTo" class="form-control form-control-sm"
-                           placeholder="Användarnamn..." />
-                <ValidationMessage For="() => editRequest.AssignedTo" />
+                <InputSelect @bind-Value="editRequest.AssignedTo" class="form-select form-select-sm">
+                    <option value="">-- Ingen --</option>
+                    @foreach (var user in Users)
+                    {
+                        <option value="@user.Username">@user.Username</option>
+                    }
+                </InputSelect>
             </div>
 
             <button type="submit" class="btn btn-success btn-sm me-1" disabled="@isSubmitting">
@@ -51,28 +55,37 @@
     }
     else
     {
-        <div class="d-flex justify-content-between align-items-start">
-            <span class="fw-semibold small">@Card.Title</span>
+        <div class="d-flex justify-content-between align-items-start mb-1">
+            <span class="badge @StatusBadgeClass(Card.Status)">
+                @StatusLabel(Card.Status)
+            </span>
             <div class="text-nowrap ms-1">
                 <button class="btn btn-link btn-sm p-0 me-1 text-secondary" @onclick="StartEdit" title="Redigera"
                         disabled="@isSubmitting"><i class="bi bi-pencil"></i></button>
-
                 <button class="btn btn-link btn-sm p-0 text-danger" @onclick="HandleDelete" title="Ta bort"
                         disabled="@isSubmitting"><i class="bi bi-trash"></i></button>
             </div>
         </div>
+        <div class="fw-semibold small mb-1">@Card.Title</div>
         @if (!string.IsNullOrEmpty(Card.Description))
         {
-            <p class="text-muted small mb-1 mt-1">@Card.Description</p>
+            <p class="text-muted small mb-1" style="font-size:0.8rem;">@Card.Description</p>
         }
         <div class="kanban-card-meta">
-            <span class="badge @StatusBadgeClass(Card.Status)">
-                @StatusLabel(Card.Status)
-            </span>
             @if (!string.IsNullOrEmpty(Card.AssigneeName))
             {
-                <span title="Tilldelad"><i class="bi bi-person"></i> @Card.AssigneeName
-                </span>
+                <div class="kanban-card-assignee">
+                    <div class="kanban-card-assignee-avatar">
+                        @Card.AssigneeName[..2].ToUpper()
+                    </div>
+                </div>
+            }
+            @if (Card.CreatedAt != default)
+            {
+                <div class="kanban-card-date">
+                    <i class="bi bi-calendar3"></i>
+                    @Card.CreatedAt.ToLocalTime().ToString("d MMM")
+                </div>
             }
         </div>
     }
@@ -85,6 +98,7 @@
 
 @code {
     [Parameter, EditorRequired] public CardDto Card { get; set; } = default!;
+    [Parameter] public List<UserDto> Users { get; set; } = [];
     [Parameter] public EventCallback<CardDto> OnCardUpdated { get; set; }
     [Parameter] public EventCallback<int> OnCardDeleted { get; set; }
     [Parameter] public EventCallback<CardDto> OnDragStarted { get; set; }

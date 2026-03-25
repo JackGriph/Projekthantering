@@ -8,6 +8,7 @@
 @inject ICardService CardService
 @inject NavigationManager Navigation
 @inject ILogger<BoardDetail> Logger
+@inject HttpClient Http
 
 <PageTitle>@(board?.Title ?? "Tavla")</PageTitle>
 
@@ -51,6 +52,7 @@ else if (board != null)
         @foreach (var list in lists)
         {
             <ListComponent List="list"
+                           Users="users"
                            OnListDeleted="HandleListDeleted"
                            OnListUpdated="HandleListUpdated"
                            DraggedCard="draggedCard"
@@ -80,6 +82,7 @@ else if (board != null)
 
     private BoardDto? board;
     private List<BoardListDto> lists = [];
+    private List<UserDto> users = [];
     private bool isLoading = true;
     private string? errorMessage;
 
@@ -107,6 +110,7 @@ else if (board != null)
                 return;
             }
             lists = await ListService.GetListsAsync(BoardId);
+            users = await Http.GetFromJsonAsync<List<UserDto>>("api/users") ?? [];
         }
         catch (Exception ex)
         {
