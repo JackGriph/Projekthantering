@@ -1,8 +1,120 @@
-﻿@page "/"
+@page "/"
 @attribute [Authorize]
+@rendermode InteractiveServer
+@using Projekthantering.Shared.DTOs
+@using Projekthantering.Client.Services
+@inject IBoardService BoardService
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Hem – Projekthantering</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="home-header">
+    <div>
+        <h4 class="home-page-title">Hem</h4>
+        <h2 class="home-welcome">Välkommen tillbaka, @userName!</h2>
+        <p class="home-subtitle">Här är en överblick av dina projekt och snabbgenvägar.</p>
+    </div>
+</div>
 
-Welcome to your new app.
+@* ── Quick‑nav tiles ── *@
+<section class="home-section">
+    <h3 class="home-section-title">Snabbnavigering</h3>
+    <div class="home-nav-grid">
+        <div class="home-nav-tile" @onclick='() => Navigation.NavigateTo("/boards")'>
+            <div class="home-nav-icon home-nav-icon--boards">
+                <i class="bi bi-kanban"></i>
+            </div>
+            <div class="home-nav-label">Tavlor</div>
+            <div class="home-nav-desc">Hantera dina kanban-tavlor</div>
+        </div>
+        <div class="home-nav-tile" @onclick='() => Navigation.NavigateTo("/settings")'>
+            <div class="home-nav-icon home-nav-icon--settings">
+                <i class="bi bi-gear"></i>
+            </div>
+            <div class="home-nav-label">Inställningar</div>
+            <div class="home-nav-desc">Profil och konfiguration</div>
+        </div>
+    </div>
+</section>
+
+@* ── Recent boards ── *@
+<section class="home-section">
+    <div class="home-section-header">
+        <h3 class="home-section-title">Senaste tavlor</h3>
+        <a class="home-see-all" href="/boards">
+            Visa alla <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+
+    @if (boards == null)
+    {
+        <div class="d-flex justify-content-center py-4">
+            <div class="spinner-border text-secondary" role="status">
+                <span class="visually-hidden">Laddar...</span>
+            </div>
+        </div>
+    }
+    else if (boards.Count == 0)
+    {
+        <div class="home-empty">
+            <div class="home-empty-icon">
+                <i class="bi bi-clipboard-plus"></i>
+            </div>
+            <p class="home-empty-text">Du har inga tavlor ännu.</p>
+            <button class="home-empty-btn" @onclick='() => Navigation.NavigateTo("/boards")'>
+                <i class="bi bi-plus-circle"></i> Skapa din första tavla
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="home-boards-grid">
+            @foreach (var board in boards.Take(4))
+            {
+                <div class="home-board-card" @onclick="() => NavigateToBoard(board.Id)">
+                    <div class="home-board-card-accent"></div>
+                    <div class="home-board-card-body">
+                        <span class="home-board-card-title">@board.Title</span>
+                        <span class="home-board-card-meta">
+                            <i class="bi bi-calendar3"></i>
+                            @board.CreatedAt.ToLocalTime().ToString("d MMM yyyy")
+                        </span>
+                        @if (!string.IsNullOrEmpty(board.Description))
+                        {
+                            <span class="home-board-card-desc">@board.Description</span>
+                        }
+                    </div>
+                    <div class="home-board-card-arrow">
+                        <i class="bi bi-arrow-right"></i>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    private List<BoardDto>? boards;
+    private string userName = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        userName = user.Identity?.Name ?? "användare";
+
+        try
+        {
+            boards = await BoardService.GetBoardsAsync();
+            // Sort by most recent first
+            boards = boards.OrderByDescending(b => b.CreatedAt).ToList();
+        }
+        catch
+        {
+            boards = new List<BoardDto>();
+        }
+    }
+
+    private void NavigateToBoard(int id) => Navigation.NavigateTo($"/boards/{id}");
+}

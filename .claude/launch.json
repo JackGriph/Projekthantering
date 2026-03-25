@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Projekthantering API",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "Projekthantering/Projekthantering.Api.csproj"],
+      "port": 5126
+    },
+    {
+      "name": "Projekthantering Client",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "Projekthantering.Client/Projekthantering.Client.csproj"],
+      "port": 5095
+    }
+  ]
+}
