@@ -8,19 +8,17 @@
 .sidenav-brand {
     display: flex;
     align-items: center;
-    gap: 0.65rem;
-    padding: 0.25rem 0.75rem 1.5rem;
+    justify-content: center;
+    padding: 1rem 0.75rem 1.25rem;
+    margin: -1.25rem -0.75rem 0.5rem;
+    background: linear-gradient(180deg, rgba(67, 184, 232, 0.15) 0%, transparent 100%);
 }
 
-.sidenav-logo {
-    font-size: 1.4rem;
-    color: #6941c6;
-}
-
-.sidenav-brand-title {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #101828;
+.sidenav-logo-img {
+    width: 90px;
+    height: auto;
+    border-radius: 14px;
+    filter: drop-shadow(0 2px 8px rgba(58, 123, 213, 0.15));
 }
 
 .sidenav-nav {
