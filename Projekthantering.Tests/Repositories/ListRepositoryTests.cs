@@ -128,4 +128,28 @@ public class ListRepositoryTests
             Assert.Null(await repo.GetByIdAsync(list.Id));
         }
     }
+
+    // Test 7
+    // UpdateAsync ska spara ändringarna i databasen
+    [Fact]
+    public async Task UpdateAsync_WhenCalled_PersistsChanges()
+    {
+        var (context, board) = await SetupBoardAsync(nameof(UpdateAsync_WhenCalled_PersistsChanges));
+        await using (context)
+        {
+            var list = new BoardList { Title = "Ursprunglig titel", BoardId = board.Id, Position = 0 };
+            context.BoardLists.Add(list);
+            await context.SaveChangesAsync();
+
+            var repo = new ListRepository(context);
+            list.Title = "Uppdaterad titel";
+            list.Position = 2;
+            await repo.UpdateAsync(list);
+
+            var updated = await repo.GetByIdAsync(list.Id);
+            Assert.NotNull(updated);
+            Assert.Equal("Uppdaterad titel", updated.Title);
+            Assert.Equal(2, updated.Position);
+        }
+    }
 }
