@@ -197,7 +197,7 @@
                 errorMessage = result.ErrorMessage ?? "Felaktiga inloggningsuppgifter.";
                 return;
             }
-            Navigation.NavigateTo("/boards");
+            Navigation.NavigateTo("/");
         }
         finally { isLoading = false; }
     }
@@ -214,7 +214,7 @@
                 errorMessage = result.ErrorMessage ?? "Registrering misslyckades.";
                 return;
             }
-            Navigation.NavigateTo("/boards");
+            Navigation.NavigateTo("/");
         }
         finally { isLoading = false; }
     }

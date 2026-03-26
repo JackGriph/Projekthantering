@@ -59,11 +59,11 @@
             <span class="badge @StatusBadgeClass(Card.Status)">
                 @StatusLabel(Card.Status)
             </span>
-            <div class="text-nowrap ms-1">
+            <div class="kanban-card-actions text-nowrap ms-1">
                 <button class="btn btn-link btn-sm p-0 me-1 text-secondary" @onclick="StartEdit" title="Redigera"
                         disabled="@isSubmitting"><i class="bi bi-pencil"></i></button>
-                <button class="btn btn-link btn-sm p-0 text-danger" @onclick="HandleDelete" title="Ta bort"
-                        disabled="@isSubmitting"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-link btn-sm p-0 text-danger" @onclick="() => showConfirmDelete = true"
+                        title="Ta bort" disabled="@isSubmitting"><i class="bi bi-trash"></i></button>
             </div>
         </div>
         <div class="fw-semibold small mb-1">@Card.Title</div>
@@ -78,6 +78,7 @@
                     <div class="kanban-card-assignee-avatar">
                         @Card.AssigneeName[..2].ToUpper()
                     </div>
+                    <span class="kanban-card-assignee-name">@Card.AssigneeName</span>
                 </div>
             }
             @if (Card.CreatedAt != default)
@@ -96,6 +97,32 @@
     }
 </div>
 
+@* Bekraftelse-dialog for radering *@
+@if (showConfirmDelete)
+{
+    <div class="modal-overlay" @onclick="() => showConfirmDelete = false">
+        <div class="confirm-dialog" @onclick:stopPropagation>
+            <div class="confirm-icon confirm-icon--danger">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <h5 class="confirm-title">Ta bort kort?</h5>
+            <p class="confirm-text">
+                Ar du saker pa att du vill ta bort <strong>@Card.Title</strong>?
+            </p>
+            <div class="confirm-actions">
+                <button class="btn-modal-cancel" @onclick="() => showConfirmDelete = false">Avbryt</button>
+                <button class="btn-confirm-danger" @onclick="HandleDelete" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    Ta bort
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter, EditorRequired] public CardDto Card { get; set; } = default!;
     [Parameter] public List<UserDto> Users { get; set; } = [];
@@ -106,6 +133,7 @@
     private bool isEditing;
     private bool isSubmitting;
     private bool isDragging;
+    private bool showConfirmDelete;
     private UpdateCardRequest editRequest = new();
     private string? errorMessage;
 
@@ -115,10 +143,7 @@
         await OnDragStarted.InvokeAsync(Card);
     }
 
-    private void HandleDragEnd()
-    {
-        isDragging = false;
-    }
+    private void HandleDragEnd() => isDragging = false;
 
     private void StartEdit()
     {
@@ -152,7 +177,7 @@
                 return;
             }
             var updated = await response.Content.ReadFromJsonAsync<CardDto>();
-            if (updated is null) { errorMessage = "Ogiltigt svar från servern."; return; }
+            if (updated is null) { errorMessage = "Ogiltigt svar fran servern."; return; }
             isEditing = false;
             await OnCardUpdated.InvokeAsync(updated);
         }
@@ -164,6 +189,7 @@
 
     private async Task HandleDelete()
     {
+        showConfirmDelete = false;
         errorMessage = null;
         isSubmitting = true;
         try
