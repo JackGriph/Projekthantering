@@ -33,19 +33,25 @@
 else if (board != null)
 {
     @* Board header *@
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <a href="/boards" class="text-muted text-decoration-none me-2"><i class="bi bi-arrow-left"></i> Tavlor
-            </a>
-            <h2 class="d-inline mb-0">@board.Title</h2>
+    <div class="board-detail-header">
+        <div class="board-detail-breadcrumb">
+            <a href="/boards"><i class="bi bi-arrow-left me-1"></i> Tavlor</a>
+            <span class="board-detail-breadcrumb-sep">/</span>
+            <span>@board.Title</span>
         </div>
-        <button class="btn btn-primary btn-sm" @onclick="() => showAddList = true">+ Ny lista</button>
+        <div class="board-detail-title-row">
+            <div>
+                <h2 class="board-detail-title">@board.Title</h2>
+                @if (!string.IsNullOrEmpty(board.Description))
+                {
+                    <p class="board-detail-desc">@board.Description</p>
+                }
+            </div>
+            <button class="board-detail-add-btn" @onclick="() => showAddList = true">
+                <i class="bi bi-plus-lg me-1"></i> Ny lista
+            </button>
+        </div>
     </div>
-
-    @if (!string.IsNullOrEmpty(board.Description))
-    {
-        <p class="text-muted mb-3">@board.Description</p>
-    }
 
     @* Kanban board - one ListComponent per list *@
     <div class="kanban-board">
