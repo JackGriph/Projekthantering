@@ -140,8 +140,8 @@ Controller → Service → Repository → Databas
 | Namn | Ansvar |
 |------|--------|
 | Jack | Projektstruktur, modeller, databas, autentisering, frontend design |
-| Sebastian | Board CRUD |
-| Filip | List & Card CRUD |
+| Sebastian | Board CRUD,buggfixar |
+| Filip | List & Card CRUD, frontend design|
 | Joel | Användare, medlemmar, tester |
 
 ## Tekniska val
