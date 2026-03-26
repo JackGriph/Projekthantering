@@ -130,4 +130,29 @@ public class BoardRepositoryTests
 
         Assert.False(result);
     }
+
+    // Test 7
+    // UpdateAsync ska spara ändringarna i databasen
+    [Fact]
+    public async Task UpdateAsync_WhenCalled_PersistsChanges()
+    {
+        await using var context = CreateContext(nameof(UpdateAsync_WhenCalled_PersistsChanges));
+        var user = MakeUser("ägare", "agare@example.com");
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        var board = new Board { Title = "Ursprunglig titel", OwnerId = user.Id };
+        context.Boards.Add(board);
+        await context.SaveChangesAsync();
+
+        var repo = new BoardRepository(context);
+        board.Title = "Uppdaterad titel";
+        board.Description = "Ny beskrivning";
+        await repo.UpdateAsync(board);
+
+        var updated = await repo.GetByIdAsync(board.Id);
+        Assert.NotNull(updated);
+        Assert.Equal("Uppdaterad titel", updated.Title);
+        Assert.Equal("Ny beskrivning", updated.Description);
+    }
 }

@@ -115,4 +115,45 @@ public class AuthControllerTests
         // Assert
         Assert.IsType<BadRequestObjectResult>(result.Result);
     }
+
+    // Test 5
+    // Refresh ska returnera OkObjectResult med AuthResponse vid giltig refresh token
+    [Fact]
+    public async Task Refresh_WhenSuccessful_ReturnsOkWithAuthResponse()
+    {
+        // Arrange
+        var authResponse = new AuthResponse { Username = "user", AccessToken = "new-token", RefreshToken = "new-refresh" };
+        _authServiceMock
+            .Setup(s => s.RefreshTokenAsync(It.IsAny<string>()))
+            .ReturnsAsync(authResponse);
+
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.Refresh(new RefreshRequest { RefreshToken = "valid-refresh-token" });
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var body = Assert.IsType<AuthResponse>(ok.Value);
+        Assert.Equal("user", body.Username);
+    }
+
+    // Test 6
+    // Refresh ska returnera BadRequest vid ogiltig refresh token
+    [Fact]
+    public async Task Refresh_WhenTokenInvalid_ReturnsBadRequest()
+    {
+        // Arrange
+        _authServiceMock
+            .Setup(s => s.RefreshTokenAsync(It.IsAny<string>()))
+            .ThrowsAsync(new InvalidOperationException("Ogiltig refresh token."));
+
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.Refresh(new RefreshRequest { RefreshToken = "bad-token" });
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
 }

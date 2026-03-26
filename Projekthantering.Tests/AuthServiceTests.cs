@@ -177,4 +177,89 @@ public class AuthServiceTests
 
         Assert.Equal("Felaktiga inloggningsuppgifter.", ex.Message);
     }
+
+    // Test 6
+    // RefreshTokenAsync ska returnera AuthResponse med ny token vid giltig refresh token
+    [Fact]
+    public async Task RefreshTokenAsync_WhenTokenIsValid_ReturnsAuthResponse()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = 1,
+            Username = "testuser",
+            Email = "test@example.com",
+            PasswordHash = "hash",
+            Role = "User",
+            RefreshToken = "valid-refresh-token",
+            RefreshTokenExpiry = DateTime.UtcNow.AddDays(7)
+        };
+
+        _userRepoMock
+            .Setup(r => r.GetByRefreshTokenAsync("valid-refresh-token"))
+            .ReturnsAsync(user);
+
+        _userRepoMock
+            .Setup(r => r.UpdateAsync(It.IsAny<User>()))
+            .Returns(Task.CompletedTask);
+
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.RefreshTokenAsync("valid-refresh-token");
+
+        // Assert
+        Assert.Equal("testuser", result.Username);
+        Assert.False(string.IsNullOrEmpty(result.AccessToken));
+        Assert.False(string.IsNullOrEmpty(result.RefreshToken));
+    }
+
+    // Test 7
+    // RefreshTokenAsync ska kasta undantag om refresh token inte finns
+    [Fact]
+    public async Task RefreshTokenAsync_WhenTokenIsInvalid_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        _userRepoMock
+            .Setup(r => r.GetByRefreshTokenAsync("invalid-token"))
+            .ReturnsAsync((User?)null);
+
+        var sut = CreateSut();
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.RefreshTokenAsync("invalid-token"));
+
+        Assert.Equal("Ogiltig refresh token.", ex.Message);
+    }
+
+    // Test 8
+    // RefreshTokenAsync ska kasta undantag om refresh token har gått ut
+    [Fact]
+    public async Task RefreshTokenAsync_WhenTokenIsExpired_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = 1,
+            Username = "testuser",
+            Email = "test@example.com",
+            PasswordHash = "hash",
+            Role = "User",
+            RefreshToken = "expired-token",
+            RefreshTokenExpiry = DateTime.UtcNow.AddDays(-1)
+        };
+
+        _userRepoMock
+            .Setup(r => r.GetByRefreshTokenAsync("expired-token"))
+            .ReturnsAsync(user);
+
+        var sut = CreateSut();
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.RefreshTokenAsync("expired-token"));
+
+        Assert.Equal("Refresh token har gått ut.", ex.Message);
+    }
 }

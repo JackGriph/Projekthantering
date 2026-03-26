@@ -144,4 +144,28 @@ public class CardRepositoryTests
 
         Assert.False(result);
     }
+
+    // Test 8
+    // UpdateAsync ska spara ändringarna i databasen
+    [Fact]
+    public async Task UpdateAsync_WhenCalled_PersistsChanges()
+    {
+        var (context, list) = await SetupListAsync(nameof(UpdateAsync_WhenCalled_PersistsChanges));
+        await using (context)
+        {
+            var card = new Card { Title = "Ursprunglig titel", ListId = list.Id, Position = 0 };
+            context.Cards.Add(card);
+            await context.SaveChangesAsync();
+
+            var repo = new CardRepository(context);
+            card.Title = "Uppdaterad titel";
+            card.Description = "Ny beskrivning";
+            await repo.UpdateAsync(card);
+
+            var updated = await repo.GetByIdAsync(card.Id);
+            Assert.NotNull(updated);
+            Assert.Equal("Uppdaterad titel", updated.Title);
+            Assert.Equal("Ny beskrivning", updated.Description);
+        }
+    }
 }
