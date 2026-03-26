@@ -1,30 +1,117 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Projekthantering.Client</a>
+@using Projekthantering.Client.Services
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+<div class="sidenav">
+    <div class="sidenav-brand">
+        <img src="images/logga.png" alt="PlanIt" class="sidenav-logo-img" />
     </div>
-</div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+    <nav class="sidenav-nav">
+        <NavLink class="sidenav-link" href="" Match="NavLinkMatch.All">
+            <i class="bi bi-house-door"></i>
+            <span>Hem</span>
+        </NavLink>
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
+        <AuthorizeView>
+            <Authorized>
+                <NavLink class="sidenav-link" href="boards">
+                    <i class="bi bi-kanban"></i>
+                    <span>Tavlor</span>
+                </NavLink>
+                <NavLink class="sidenav-link" href="settings">
+                    <i class="bi bi-gear"></i>
+                    <span>Inställningar</span>
+                </NavLink>
+            </Authorized>
+            <NotAuthorized>
+                <NavLink class="sidenav-link" href="login">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span>Logga in</span>
+                </NavLink>
+                <NavLink class="sidenav-link" href="register">
+                    <i class="bi bi-person-plus"></i>
+                    <span>Registrera</span>
+                </NavLink>
+            </NotAuthorized>
+        </AuthorizeView>
     </nav>
+
+    <AuthorizeView>
+        <Authorized>
+            <div class="sidenav-footer">
+                <div class="sidenav-profile-wrapper">
+                    <button class="sidenav-profile-btn" @onclick="ToggleProfileMenu">
+                        <div class="sidenav-profile-avatar">
+                            @GetInitials(context.User.Identity?.Name)
+                        </div>
+                        <div class="sidenav-profile-info">
+                            <span class="sidenav-profile-name">@context.User.Identity?.Name</span>
+                            <span class="sidenav-profile-email">@GetEmail(context.User)</span>
+                        </div>
+                        <i class="bi bi-chevron-up sidenav-profile-chevron @(showProfileMenu ? "open" : "")"></i>
+                    </button>
+
+                    @if (showProfileMenu)
+                    {
+                        <div class="sidenav-profile-menu">
+                            <div class="sidenav-profile-menu-header">
+                                <div class="sidenav-profile-avatar-lg">
+                                    @GetInitials(context.User.Identity?.Name)
+                                </div>
+                                <div>
+                                    <div class="sidenav-profile-menu-name">@context.User.Identity?.Name</div>
+                                    <div class="sidenav-profile-menu-email">@GetEmail(context.User)</div>
+                                </div>
+                            </div>
+                            <div class="sidenav-profile-menu-divider"></div>
+                            <button class="sidenav-profile-menu-item" @onclick="GoToSettings">
+                                <i class="bi bi-gear me-2"></i> Inställningar
+                            </button>
+                            <button class="sidenav-profile-menu-item sidenav-profile-menu-item--danger" @onclick="HandleLogout">
+                                <i class="bi bi-box-arrow-right me-2"></i> Logga ut
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </Authorized>
+    </AuthorizeView>
 </div>
 
+@if (showProfileMenu)
+{
+    <div class="sidenav-profile-backdrop" @onclick="() => showProfileMenu = false"></div>
+}
+
+@code {
+    private bool showProfileMenu;
+
+    private void ToggleProfileMenu() => showProfileMenu = !showProfileMenu;
+
+    private void GoToSettings()
+    {
+        showProfileMenu = false;
+        Navigation.NavigateTo("/settings");
+    }
+
+    private async Task HandleLogout()
+    {
+        showProfileMenu = false;
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/login");
+    }
+
+    private string GetInitials(string? name)
+    {
+        if (string.IsNullOrEmpty(name)) return "?";
+        return name.Length >= 2 ? name[..2].ToUpper() : name.ToUpper();
+    }
+
+    private string GetEmail(System.Security.Claims.ClaimsPrincipal user)
+    {
+        return user.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+            ?? user.FindFirst("email")?.Value
+            ?? "";
+    }
+}

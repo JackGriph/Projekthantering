@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Projekthantering.Data;
+using Projekthantering.Services;
+using Projekthantering.Repositories;
+using System.Security.Claims;
 
 namespace Projekthantering;
 
@@ -18,7 +21,7 @@ public class Program
 
         // JWT Authentication
         var jwtKey = builder.Configuration["Jwt:Key"]
-            ?? "SuperSecretKeyThatIsAtLeast32CharactersLong!";
+            ?? throw new InvalidOperationException("JWT-nyckel saknas i konfigurationen. Lägg till 'Jwt:Key' i appsettings.json.");
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
@@ -47,16 +50,22 @@ public class Program
         {
             options.AddPolicy("AllowBlazor", policy =>
             {
-                policy.WithOrigins("https://localhost:5002")
+                policy.WithOrigins("https://localhost:7147")
                       .AllowAnyHeader()
                       .AllowAnyMethod();
             });
         });
 
         // DI - Services och Repositories
-        // builder.Services.AddScoped<IAuthService, AuthService>();
-        // builder.Services.AddScoped<IUserRepository, UserRepository>();
-        // (avkommentera när steg 7 är klart)
+        builder.Services.AddScoped<IAuthService, AuthService>();
+        builder.Services.AddScoped<IUserRepository, UserRepository>();
+        builder.Services.AddScoped<IBoardRepository, BoardRepository>();
+        builder.Services.AddScoped<IBoardService, BoardService>();
+        builder.Services.AddScoped<IListRepository, ListRepository>();
+        builder.Services.AddScoped<IListService, ListService>();
+        builder.Services.AddScoped<ICardRepository, CardRepository>();
+        builder.Services.AddScoped<ICardService, CardService>();
+        
 
         var app = builder.Build();
 

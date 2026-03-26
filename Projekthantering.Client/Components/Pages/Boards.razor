@@ -1,0 +1,91 @@
+@page "/boards"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using Projekthantering.Shared.DTOs
+@using Projekthantering.Client.Services
+@inject IBoardService BoardService
+@inject NavigationManager Navigation
+
+<PageTitle>Mina tavlor</PageTitle>
+
+<h4 class="boards-page-title">Mina Tavlor</h4>
+
+<div class="boards-welcome">
+    <h2>Välkommen tillbaka</h2>
+    <p>Hantera dina pågående projekt och tavlor.</p>
+</div>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible">
+        @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+    </div>
+}
+
+@if (showCreateForm)
+{
+    <CreateBoardDialog OnCreated="HandleBoardCreated" OnCancel="HandleBoardCancelled" />
+}
+
+@if (boards == null)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-secondary" role="status">
+            <span class="visually-hidden">Laddar...</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="boards-grid">
+        <div class="board-card-create" @onclick="() => showCreateForm = true">
+            <div class="board-card-create-icon">+</div>
+            <div class="board-card-create-text">Skapa ny tavla</div>
+        </div>
+
+        @foreach (var board in boards)
+        {
+            <BoardCard Board="board" OnDelete="HandleDeleteBoard" />
+        }
+    </div>
+}
+
+@code {
+    private List<BoardDto>? boards;
+    private bool showCreateForm;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBoards();
+    }
+
+    private async Task LoadBoards()
+    {
+        try
+        {
+            boards = await BoardService.GetBoardsAsync();
+        }
+        catch
+        {
+            errorMessage = "Kunde inte ladda tavlor.";
+        }
+    }
+
+    private async Task HandleDeleteBoard(int id)
+    {
+        errorMessage = null;
+        var ok = await BoardService.DeleteBoardAsync(id);
+        if (!ok) { errorMessage = "Kunde inte ta bort tavlan."; return; }
+        await LoadBoards();
+    }
+
+    private async Task HandleBoardCreated()
+    {
+        showCreateForm = false;
+        await LoadBoards();
+    }
+
+    private void HandleBoardCancelled() => showCreateForm = false;
+}

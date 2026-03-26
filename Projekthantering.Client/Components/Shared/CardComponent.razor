@@ -1,0 +1,224 @@
+@inject HttpClient Http
+
+<div class="kanban-card @(isDragging ? "dragging" : "")"
+     draggable="true"
+     @ondragstart="HandleDragStart"
+     @ondragend="HandleDragEnd">
+
+    @if (isEditing)
+    {
+        <EditForm Model="editRequest" OnValidSubmit="HandleUpdate" FormName="@($"edit-card-{Card.Id}")">
+            <DataAnnotationsValidator />
+
+            <div class="mb-1">
+                <label class="form-label form-label-sm mb-0">Titel</label>
+                <InputText @bind-Value="editRequest.Title" class="form-control form-control-sm" />
+                <ValidationMessage For="() => editRequest.Title" />
+            </div>
+
+            <div class="mb-1">
+                <label class="form-label form-label-sm mb-0">Beskrivning</label>
+                <InputTextArea @bind-Value="editRequest.Description" class="form-control form-control-sm" rows="2" />
+                <ValidationMessage For="() => editRequest.Description" />
+            </div>
+
+            <div class="mb-1">
+                <label class="form-label form-label-sm mb-0">Status</label>
+                <InputSelect @bind-Value="editRequest.Status" class="form-select form-select-sm">
+                    <option value="todo">Att göra</option>
+                    <option value="in_progress">Pågående</option>
+                    <option value="done">Klar</option>
+                </InputSelect>
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label form-label-sm mb-0">Tilldelad</label>
+                <InputSelect @bind-Value="editRequest.AssignedTo" class="form-select form-select-sm">
+                    <option value="">-- Ingen --</option>
+                    @foreach (var user in Users)
+                    {
+                        <option value="@user.Username">@user.Username</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <button type="submit" class="btn btn-success btn-sm me-1" disabled="@isSubmitting">
+                @if (isSubmitting)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                }
+                Spara
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" @onclick="CancelEdit"
+                    disabled="@isSubmitting">Avbryt</button>
+        </EditForm>
+    }
+    else
+    {
+        <div class="d-flex justify-content-between align-items-start mb-1">
+            <span class="badge @StatusBadgeClass(Card.Status)">
+                @StatusLabel(Card.Status)
+            </span>
+            <div class="kanban-card-actions text-nowrap ms-1">
+                <button class="btn btn-link btn-sm p-0 me-1 text-secondary" @onclick="StartEdit" title="Redigera"
+                        disabled="@isSubmitting"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-link btn-sm p-0 text-danger" @onclick="() => showConfirmDelete = true"
+                        title="Ta bort" disabled="@isSubmitting"><i class="bi bi-trash"></i></button>
+            </div>
+        </div>
+        <div class="fw-semibold small mb-1">@Card.Title</div>
+        @if (!string.IsNullOrEmpty(Card.Description))
+        {
+            <p class="text-muted small mb-1" style="font-size:0.8rem;">@Card.Description</p>
+        }
+        <div class="kanban-card-meta">
+            @if (!string.IsNullOrEmpty(Card.AssigneeName))
+            {
+                <div class="kanban-card-assignee">
+                    <div class="kanban-card-assignee-avatar">
+                        @Card.AssigneeName[..2].ToUpper()
+                    </div>
+                    <span class="kanban-card-assignee-name">@Card.AssigneeName</span>
+                </div>
+            }
+            @if (Card.CreatedAt != default)
+            {
+                <div class="kanban-card-date">
+                    <i class="bi bi-calendar3"></i>
+                    @Card.CreatedAt.ToLocalTime().ToString("d MMM")
+                </div>
+            }
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger py-1 px-2 mt-1 small">@errorMessage</div>
+    }
+</div>
+
+@* Bekräftelse-dialog för radering *@
+@if (showConfirmDelete)
+{
+    <div class="modal-overlay" @onclick="() => showConfirmDelete = false">
+        <div class="confirm-dialog" @onclick:stopPropagation>
+            <div class="confirm-icon confirm-icon--danger">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <h5 class="confirm-title">Ta bort kort?</h5>
+            <p class="confirm-text">
+                Är du säker på att du vill ta bort <strong>@Card.Title</strong>?
+            </p>
+            <div class="confirm-actions">
+                <button class="btn-modal-cancel" @onclick="() => showConfirmDelete = false">Avbryt</button>
+                <button class="btn-confirm-danger" @onclick="HandleDelete" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    Ta bort
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public CardDto Card { get; set; } = default!;
+    [Parameter] public List<UserDto> Users { get; set; } = [];
+    [Parameter] public EventCallback<CardDto> OnCardUpdated { get; set; }
+    [Parameter] public EventCallback<int> OnCardDeleted { get; set; }
+    [Parameter] public EventCallback<CardDto> OnDragStarted { get; set; }
+
+    private bool isEditing;
+    private bool isSubmitting;
+    private bool isDragging;
+    private bool showConfirmDelete;
+    private UpdateCardRequest editRequest = new();
+    private string? errorMessage;
+
+    private async Task HandleDragStart()
+    {
+        isDragging = true;
+        await OnDragStarted.InvokeAsync(Card);
+    }
+
+    private void HandleDragEnd() => isDragging = false;
+
+    private void StartEdit()
+    {
+        editRequest = new UpdateCardRequest
+        {
+            Title = Card.Title,
+            Description = Card.Description,
+            Status = Card.Status,
+            AssignedTo = Card.AssigneeName,
+            DueDate = Card.DueDate
+        };
+        isEditing = true;
+    }
+
+    private void CancelEdit()
+    {
+        isEditing = false;
+        errorMessage = null;
+    }
+
+    private async Task HandleUpdate()
+    {
+        errorMessage = null;
+        isSubmitting = true;
+        try
+        {
+            var response = await Http.PatchAsJsonAsync($"api/cards/{Card.Id}", editRequest);
+            if (!response.IsSuccessStatusCode)
+            {
+                errorMessage = "Kunde inte uppdatera kortet.";
+                return;
+            }
+            var updated = await response.Content.ReadFromJsonAsync<CardDto>();
+            if (updated is null) { errorMessage = "Ogiltigt svar fran servern."; return; }
+            isEditing = false;
+            await OnCardUpdated.InvokeAsync(updated);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task HandleDelete()
+    {
+        showConfirmDelete = false;
+        errorMessage = null;
+        isSubmitting = true;
+        try
+        {
+            var response = await Http.DeleteAsync($"api/cards/{Card.Id}");
+            if (!response.IsSuccessStatusCode)
+            {
+                errorMessage = "Kunde inte ta bort kortet.";
+                return;
+            }
+            await OnCardDeleted.InvokeAsync(Card.Id);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private static string StatusBadgeClass(string status) => status switch
+    {
+        "in_progress" => "badge-status-in_progress",
+        "done" => "badge-status-done",
+        _ => "badge-status-todo"
+    };
+
+    private static string StatusLabel(string status) => status switch
+    {
+        "in_progress" => "Pågående",
+        "done" => "Klar",
+        _ => "Att göra"
+    };
+}

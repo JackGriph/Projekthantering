@@ -1,0 +1,296 @@
+@using Projekthantering.Client.Services
+@inject HttpClient Http
+@inject ILogger<ListComponent> Logger
+
+<div class="kanban-column @(isDragOver ? "drag-over" : "")
+     @(DraggedCard != null && DraggedCard.ListId != List.Id ? "drop-target" : "")"
+     @ondragover="HandleDragOver"
+     @ondragover:preventDefault
+     @ondragleave="HandleDragLeave"
+     @ondrop="HandleDrop"
+     @ondrop:preventDefault>
+
+    @* Column header *@
+    @if (isEditingTitle)
+    {
+        <EditForm Model="editListRequest" OnValidSubmit="HandleUpdateList" FormName="@($"edit-list-{List.Id}")">
+            <DataAnnotationsValidator />
+            <div class="input-group input-group-sm mb-2">
+                <InputText @bind-Value="editListRequest.Title" class="form-control" />
+                <button type="submit" class="btn btn-success"><i class="bi bi-check"></i></button>
+                <button type="button" class="btn btn-secondary" @onclick="() => isEditingTitle = false">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+        </EditForm>
+    }
+    else
+    {
+        <div class="kanban-column-header">
+            <span>@List.Title <span class="badge bg-secondary rounded-pill ms-1">@cards.Count</span></span>
+            <div>
+                <button class="btn btn-link btn-sm p-0 me-2 text-secondary" @onclick="StartEditTitle"
+                        title="Byt namn"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-link btn-sm p-0 text-danger" @onclick="() => showConfirmDelete = true"
+                        title="Ta bort lista"><i class="bi bi-trash"></i></button>
+            </div>
+        </div>
+    }
+
+    @* Loading *@
+    @if (isLoading)
+    {
+        <div class="text-center py-2">
+            <div class="spinner-border spinner-border-sm text-secondary" role="status">
+                <span class="visually-hidden">Laddar...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        @* Cards *@
+        @if (cards.Count == 0)
+        {
+            <div class="drop-placeholder text-muted small text-center py-3 mb-1">
+                @if (DraggedCard != null && DraggedCard.ListId != List.Id)
+                {
+                    <span><i class="bi bi-plus-circle"></i> Släpp kort här</span>
+                }
+                else
+                {
+                    <span>Inga kort ännu - lägg till ett!</span>
+                }
+            </div>
+        }
+        else
+        {
+            @foreach (var card in cards.OrderBy(c => c.Position))
+            {
+                <CardComponent Card="card"
+                               Users="Users"
+                               OnCardUpdated="HandleCardUpdated"
+                               OnCardDeleted="HandleCardDeleted"
+                               OnDragStarted="HandleCardDragStarted" />
+            }
+        }
+
+        @* Add card *@
+        @if (isAddingCard)
+        {
+            <EditForm Model="newCardRequest" OnValidSubmit="HandleCreateCard" FormName="@($"add-card-{List.Id}")">
+                <DataAnnotationsValidator />
+                <InputText @bind-Value="newCardRequest.Title" class="form-control form-control-sm mb-1"
+                           placeholder="Korttitel..." />
+                <ValidationMessage For="() => newCardRequest.Title" />
+                <button type="submit" class="btn btn-success btn-sm me-1 mt-1" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                    }
+                    Lägg till
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm mt-1" @onclick="CancelAddCard"
+                        disabled="@isSubmitting">Avbryt</button>
+            </EditForm>
+        }
+        else
+        {
+            <button class="kanban-add-card-btn" @onclick="() => isAddingCard = true">
+                <i class="bi bi-plus-lg me-1"></i> Lägg till kort
+            </button>
+        }
+    }
+
+    @* Error banner *@
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible py-1 px-2 mt-2 small">
+            @errorMessage
+            <button type="button" class="btn-close btn-sm" @onclick="() => errorMessage = null"></button>
+        </div>
+    }
+</div>
+
+@* Bekräftelse-dialog för radering *@
+@if (showConfirmDelete)
+{
+    <div class="modal-overlay" @onclick="() => showConfirmDelete = false">
+        <div class="confirm-dialog" @onclick:stopPropagation>
+            <div class="confirm-icon confirm-icon--danger">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <h5 class="confirm-title">Ta bort lista?</h5>
+            <p class="confirm-text">
+                Är du säker på att du vill ta bort <strong>@List.Title</strong>?
+                Alla @cards.Count kort i listan kommer att raderas.
+            </p>
+            <div class="confirm-actions">
+                <button class="btn-modal-cancel" @onclick="() => showConfirmDelete = false">Avbryt</button>
+                <button class="btn-confirm-danger" @onclick="HandleDeleteList">
+                    Ta bort
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public BoardListDto List { get; set; } = default!;
+    [Parameter] public List<UserDto> Users { get; set; } = [];
+    [Parameter] public EventCallback<int> OnListDeleted { get; set; }
+    [Parameter] public EventCallback<BoardListDto> OnListUpdated { get; set; }
+
+    // Drag-and-drop parameters
+    [Parameter] public CardDto? DraggedCard { get; set; }
+    [Parameter] public EventCallback<CardDto> OnCardDragStarted { get; set; }
+    [Parameter] public EventCallback<int> OnCardDropped { get; set; }
+
+    private List<CardDto> cards = [];
+    private bool isLoading = true;
+    private string? errorMessage;
+    private bool isDragOver;
+    private int currentListId;
+    private bool showConfirmDelete;
+
+    // List editing
+    private bool isEditingTitle;
+    private UpdateListRequest editListRequest = new();
+
+    // Add-card form
+    private bool isAddingCard;
+    private bool isSubmitting;
+    private CreateCardRequest newCardRequest = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentListId = List.Id;
+        await LoadCardsAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (List.Id == currentListId)
+        {
+            await ReloadCardsQuietly();
+        }
+    }
+
+    private async Task ReloadCardsQuietly()
+    {
+        try
+        {
+            var result = await Http.GetFromJsonAsync<List<CardDto>>(
+                $"api/lists/{List.Id}/cards");
+            cards = result ?? [];
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fel vid omladdning: {ex.Message}");
+        }
+    }
+
+    private async Task LoadCardsAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            var result = await Http.GetFromJsonAsync<List<CardDto>>(
+                $"api/lists/{List.Id}/cards");
+            cards = result ?? [];
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Fel vid laddning av kort for lista {ListId}", List.Id);
+            errorMessage = "Kunde inte ladda kort.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    // Drag-and-drop handlers
+    private void HandleDragOver()
+    {
+        if (DraggedCard != null && DraggedCard.ListId != List.Id)
+        {
+            isDragOver = true;
+        }
+    }
+
+    private void HandleDragLeave() => isDragOver = false;
+
+    private async Task HandleDrop()
+    {
+        isDragOver = false;
+        if (DraggedCard != null)
+        {
+            await OnCardDropped.InvokeAsync(List.Id);
+        }
+    }
+
+    private async Task HandleCardDragStarted(CardDto card)
+    {
+        await OnCardDragStarted.InvokeAsync(card);
+    }
+
+    // List operations
+    private void StartEditTitle()
+    {
+        editListRequest = new UpdateListRequest { Title = List.Title, Position = List.Position };
+        isEditingTitle = true;
+    }
+
+    private async Task HandleUpdateList()
+    {
+        errorMessage = null;
+        var response = await Http.PatchAsJsonAsync($"api/lists/{List.Id}", editListRequest);
+        if (!response.IsSuccessStatusCode) { errorMessage = "Kunde inte uppdatera listan."; return; }
+        var updated = await response.Content.ReadFromJsonAsync<BoardListDto>();
+        if (updated is null) { errorMessage = "Ogiltigt svar fran servern."; return; }
+        isEditingTitle = false;
+        await OnListUpdated.InvokeAsync(updated);
+    }
+
+    private async Task HandleDeleteList()
+    {
+        showConfirmDelete = false;
+        errorMessage = null;
+        var response = await Http.DeleteAsync($"api/lists/{List.Id}");
+        if (!response.IsSuccessStatusCode) { errorMessage = "Kunde inte ta bort listan."; return; }
+        await OnListDeleted.InvokeAsync(List.Id);
+    }
+
+    // Card operations
+    private async Task HandleCreateCard()
+    {
+        errorMessage = null;
+        isSubmitting = true;
+        try
+        {
+            var response = await Http.PostAsJsonAsync($"api/lists/{List.Id}/cards", newCardRequest);
+            if (!response.IsSuccessStatusCode) { errorMessage = "Kunde inte skapa kortet."; return; }
+            var created = await response.Content.ReadFromJsonAsync<CardDto>();
+            if (created is null) { errorMessage = "Ogiltigt svar fran servern."; return; }
+            cards.Add(created);
+            newCardRequest = new();
+            isAddingCard = false;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void HandleCardUpdated(CardDto updated)
+    {
+        var idx = cards.FindIndex(c => c.Id == updated.Id);
+        if (idx >= 0) cards[idx] = updated;
+    }
+
+    private void HandleCardDeleted(int cardId)
+        => cards.RemoveAll(c => c.Id == cardId);
+
+    private void CancelAddCard() { isAddingCard = false; newCardRequest = new(); }
+}

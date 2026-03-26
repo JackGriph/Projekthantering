@@ -1,4 +1,6 @@
-﻿namespace Projekthantering.Shared.DTOs;
+using System.ComponentModel.DataAnnotations;
+
+namespace Projekthantering.Shared.DTOs;
 
 public class CardDto
 {
@@ -7,6 +9,7 @@ public class CardDto
     public string? Description { get; set; }
     public int ListId { get; set; }
     public int Position { get; set; }
+    public string Status { get; set; } = "todo";
     public int? AssigneeId { get; set; }
     public string? AssigneeName { get; set; }
     public DateTime? DueDate { get; set; }
@@ -15,20 +18,45 @@ public class CardDto
 
 public class CreateCardRequest
 {
+    [Required(ErrorMessage = "Titel krävs.")]
+    [MinLength(1, ErrorMessage = "Titel får inte vara tom.")]
+    [MaxLength(200, ErrorMessage = "Titel får vara max 200 tecken.")]
     public string Title { get; set; } = string.Empty;
-    public string? Description { get; set; }
-}
 
-public class UpdateCardRequest
-{
-    public string Title { get; set; } = string.Empty;
+    [MaxLength(2000, ErrorMessage = "Beskrivning får vara max 2000 tecken.")]
     public string? Description { get; set; }
+
+    public string Status { get; set; } = "todo";
+
     public int? AssigneeId { get; set; }
-    public DateTime? DueDate { get; set; }
 }
 
 public class MoveCardRequest
 {
+    [Required(ErrorMessage = "Mål-lista krävs.")]
     public int TargetListId { get; set; }
-    public int NewPosition { get; set; }
+
+    public int Position { get; set; }
 }
+
+public class UpdateCardRequest
+{
+    [Required(ErrorMessage = "Titel krävs.")]
+    [MinLength(1, ErrorMessage = "Titel får inte vara tom.")]
+    [MaxLength(200, ErrorMessage = "Titel får vara max 200 tecken.")]
+    public string Title { get; set; } = string.Empty;
+
+    [MaxLength(2000, ErrorMessage = "Beskrivning får vara max 2000 tecken.")]
+    public string? Description { get; set; }
+
+    public string Status { get; set; } = "todo";
+
+    public int? AssigneeId { get; set; }
+
+    [MaxLength(100, ErrorMessage = "Användarnamn får vara max 100 tecken.")]
+    public string? AssignedTo { get; set; }
+
+    public DateTime? DueDate { get; set; }
+}
+
+

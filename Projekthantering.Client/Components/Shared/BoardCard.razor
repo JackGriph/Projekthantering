@@ -1,0 +1,89 @@
+@using Projekthantering.Shared.DTOs
+@inject NavigationManager Navigation
+
+<div class="board-card" @onclick="Navigate">
+    <div class="board-card-accent"></div>
+    <div class="board-card-content">
+        <div class="board-card-header">
+            <span class="board-card-title">@Board.Title</span>
+            <button class="board-card-menu" @onclick:stopPropagation
+                    @onclick="ToggleMenu" title="Alternativ">
+                <i class="bi bi-three-dots"></i>
+            </button>
+        </div>
+
+        @if (showMenu)
+        {
+            <div class="board-card-dropdown" @onclick:stopPropagation>
+                <button class="board-card-dropdown-item text-danger" @onclick="ConfirmDelete">
+                    <i class="bi bi-trash me-2"></i> Ta bort
+                </button>
+            </div>
+        }
+
+        <div class="board-card-meta">
+            <i class="bi bi-calendar3 me-1"></i>
+            @Board.CreatedAt.ToLocalTime().ToString("d MMM yyyy")
+        </div>
+
+        @if (!string.IsNullOrEmpty(Board.Description))
+        {
+            <div class="board-card-desc">@Board.Description</div>
+        }
+
+    </div>
+</div>
+
+@* Bekräftelse-dialog *@
+@if (showConfirmDelete)
+{
+    <div class="modal-overlay" @onclick="() => showConfirmDelete = false" @onclick:stopPropagation>
+        <div class="confirm-dialog" @onclick:stopPropagation>
+            <div class="confirm-icon confirm-icon--danger">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <h5 class="confirm-title">Ta bort tavla?</h5>
+            <p class="confirm-text">
+                Är du säker på att du vill ta bort <strong>@Board.Title</strong>?
+                Alla listor och kort i tavlan kommer att raderas.
+            </p>
+            <div class="confirm-actions">
+                <button class="btn-modal-cancel" @onclick="() => showConfirmDelete = false">Avbryt</button>
+                <button class="btn-confirm-danger" @onclick="HandleDelete" disabled="@isDeleting">
+                    @if (isDeleting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    Ta bort
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public BoardDto Board { get; set; } = default!;
+    [Parameter] public EventCallback<int> OnDelete { get; set; }
+
+    private bool showMenu;
+    private bool showConfirmDelete;
+    private bool isDeleting;
+
+    private void Navigate() => Navigation.NavigateTo($"/boards/{Board.Id}");
+
+    private void ToggleMenu() => showMenu = !showMenu;
+
+    private void ConfirmDelete()
+    {
+        showMenu = false;
+        showConfirmDelete = true;
+    }
+
+    private async Task HandleDelete()
+    {
+        isDeleting = true;
+        await OnDelete.InvokeAsync(Board.Id);
+        isDeleting = false;
+        showConfirmDelete = false;
+    }
+}

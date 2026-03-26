@@ -1,0 +1,197 @@
+@page "/boards/{BoardId:int}"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using Projekthantering.Client.Services
+@using Projekthantering.Client.Components.Shared
+@inject IBoardService BoardService
+@inject IListService ListService
+@inject ICardService CardService
+@inject NavigationManager Navigation
+@inject ILogger<BoardDetail> Logger
+@inject HttpClient Http
+
+<PageTitle>@(board?.Title ?? "Tavla")</PageTitle>
+
+@* Error banner *@
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible">
+        @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+    </div>
+}
+
+@* Loading spinner *@
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center align-items-center" style="min-height:40vh">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Laddar...</span>
+        </div>
+    </div>
+}
+else if (board != null)
+{
+    @* Board header *@
+    <div class="board-detail-header">
+        <div class="board-detail-breadcrumb">
+            <a href="/boards"><i class="bi bi-arrow-left me-1"></i> Tavlor</a>
+            <span class="board-detail-breadcrumb-sep">/</span>
+            <span>@board.Title</span>
+        </div>
+        <div class="board-detail-title-row">
+            <div>
+                <h2 class="board-detail-title">@board.Title</h2>
+                @if (!string.IsNullOrEmpty(board.Description))
+                {
+                    <p class="board-detail-desc">@board.Description</p>
+                }
+            </div>
+            <button class="board-detail-add-btn" @onclick="() => showAddList = true">
+                <i class="bi bi-plus-lg me-1"></i> Ny lista
+            </button>
+        </div>
+    </div>
+
+    @* Kanban board - one ListComponent per list *@
+    <div class="kanban-board">
+        @foreach (var list in lists)
+        {
+            <ListComponent List="list"
+                           Users="users"
+                           OnListDeleted="HandleListDeleted"
+                           OnListUpdated="HandleListUpdated"
+                           DraggedCard="draggedCard"
+                           OnCardDragStarted="HandleCardDragStarted"
+                           OnCardDropped="HandleCardDropped" />
+        }
+
+        @* Add-list form - inside the board as a column *@
+        @if (showAddList)
+        {
+            <div class="kanban-column">
+                <EditForm Model="newListRequest" OnValidSubmit="HandleCreateList" FormName="add-list">
+                    <DataAnnotationsValidator />
+                    <InputText @bind-Value="newListRequest.Title" class="form-control form-control-sm mb-2"
+                               placeholder="Titel..." />
+                    <ValidationMessage For="() => newListRequest.Title" />
+                    <button type="submit" class="btn btn-success btn-sm me-1">Lägg till</button>
+                    <button type="button" class="btn btn-secondary btn-sm" @onclick="CancelAddList">Avbryt</button>
+                </EditForm>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public int BoardId { get; set; }
+
+    private BoardDto? board;
+    private List<BoardListDto> lists = [];
+    private List<UserDto> users = [];
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    private bool showAddList;
+    private CreateListRequest newListRequest = new();
+
+    // Drag-and-drop state
+    private CardDto? draggedCard;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBoardAsync();
+    }
+
+    private async Task LoadBoardAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            board = await BoardService.GetBoardAsync(BoardId);
+            if (board == null)
+            {
+                Navigation.NavigateTo("/boards");
+                return;
+            }
+            lists = await ListService.GetListsAsync(BoardId);
+            users = await Http.GetFromJsonAsync<List<UserDto>>("api/users") ?? [];
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Fel vid laddning av tavla {BoardId}", BoardId);
+            errorMessage = "Kunde inte ladda tavlan. Kontrollera anslutningen och försök igen.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleCreateList()
+    {
+        errorMessage = null;
+        var result = await ListService.CreateListAsync(BoardId, newListRequest);
+        if (result == null) { errorMessage = "Kunde inte skapa listan."; return; }
+        lists.Add(result);
+        newListRequest = new();
+        showAddList = false;
+    }
+
+    private void HandleListDeleted(int listId)
+        => lists.RemoveAll(l => l.Id == listId);
+
+    private void HandleListUpdated(BoardListDto updated)
+    {
+        var idx = lists.FindIndex(l => l.Id == updated.Id);
+        if (idx >= 0) lists[idx] = updated;
+    }
+
+    private void CancelAddList() { showAddList = false; newListRequest = new(); }
+
+    // Drag-and-drop handlers
+    private void HandleCardDragStarted(CardDto card)
+    {
+        draggedCard = card;
+    }
+
+    private async Task HandleCardDropped(int targetListId)
+    {
+        if (draggedCard is null) return;
+        if (draggedCard.ListId == targetListId)
+        {
+            draggedCard = null;
+            return;
+        }
+
+        var cardToMove = draggedCard;
+        draggedCard = null;
+
+        try
+        {
+            var moveRequest = new MoveCardRequest
+            {
+                TargetListId = targetListId,
+                Position = 0
+            };
+
+            var result = await CardService.MoveCardAsync(cardToMove.Id, moveRequest);
+            if (result != null)
+            {
+                // Ladda om alla listor för att få rätt state
+                lists = await ListService.GetListsAsync(BoardId);
+                StateHasChanged();
+            }
+            else
+            {
+                errorMessage = "Kunde inte flytta kortet.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Fel vid flytt av kort {CardId}", cardToMove.Id);
+            errorMessage = "Kunde inte flytta kortet.";
+        }
+    }
+}

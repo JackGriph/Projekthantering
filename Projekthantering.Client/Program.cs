@@ -1,37 +1,64 @@
+using Microsoft.AspNetCore.Components.Authorization;
 using Projekthantering.Client.Components;
+using Projekthantering.Client.Services;
 
-namespace Projekthantering.Client
+namespace Projekthantering.Client;
+
+public class Program
 {
-    public class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
+        var builder = WebApplication.CreateBuilder(args);
+
+        builder.Services.AddRazorComponents()
+            .AddInteractiveServerComponents();
+
+        // Auth
+        builder.Services.AddAuthorizationCore();
+        builder.Services.AddCascadingAuthenticationState();
+        builder.Services.AddScoped<TokenProvider>();
+        builder.Services.AddScoped<AuthStateProvider>();
+        builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
+            sp.GetRequiredService<AuthStateProvider>());
+
+        // HttpClient mot API – skapas direkt i circuit-scopen
+        // (IHttpClientFactory pooler handlers separat, vilket bryter scoped TokenProvider)
+        builder.Services.AddScoped(sp =>
         {
-            var builder = WebApplication.CreateBuilder(args);
-
-            // Add services to the container.
-            builder.Services.AddRazorComponents()
-                .AddInteractiveServerComponents();
-
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (!app.Environment.IsDevelopment())
+            var tokenProvider = sp.GetRequiredService<TokenProvider>();
+            var handler = new AuthHeaderHandler(tokenProvider)
             {
-                app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
-            }
+                InnerHandler = new HttpClientHandler()
+            };
+            return new HttpClient(handler)
+            {
+                BaseAddress = new Uri("https://localhost:7191")
+            };
+        });
 
-            app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-            app.UseHttpsRedirection();
+        // Services
+        builder.Services.AddScoped<IAuthService, AuthService>();
+        builder.Services.AddScoped<IBoardService, BoardService>();
+        builder.Services.AddScoped<IListService, ListService>();
+        builder.Services.AddScoped<ICardService, CardService>();
 
-            app.UseAntiforgery();
+        var app = builder.Build();
 
-            app.MapStaticAssets();
-            app.MapRazorComponents<App>()
-                .AddInteractiveServerRenderMode();
-
-            app.Run();
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseExceptionHandler("/Error");
+            app.UseHsts();
         }
+
+        app.UseStatusCodePagesWithReExecute("/not-found",
+            createScopeForStatusCodePages: true);
+        app.UseHttpsRedirection();
+        app.UseAntiforgery();
+        app.MapStaticAssets();
+        app.MapRazorComponents<App>()
+            .AddInteractiveServerRenderMode()
+            .AllowAnonymous();
+
+        app.Run();
     }
 }

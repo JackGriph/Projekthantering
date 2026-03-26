@@ -1,0 +1,221 @@
+@page "/login"
+@page "/register"
+@rendermode InteractiveServer
+@using Projekthantering.Shared.DTOs
+@using Projekthantering.Client.Services
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@layout EmptyLayout
+
+<div class="auth-container">
+    @* ===== VÄNSTER SIDA - Branding ===== *@
+    <div class="auth-left">
+        <div class="auth-brand">
+            <img src="images/logga.png" alt="PlanIt" class="auth-logo" />
+            <h1 class="auth-title">Hantera dina projekt med <span class="auth-highlight">PlanIt</span></h1>
+            <p class="auth-subtitle">
+                Ett kraftfullt projektverktyg för team.<br />
+                Organisera, planera och samarbeta i en miljö byggd för klarhet.
+            </p>
+            <div class="auth-social-proof">
+                <span class="auth-badge">Skolprojekt 2026</span>
+            </div>
+        </div>
+    </div>
+
+    @* ===== HÖGER SIDA - Formulär ===== *@
+    <div class="auth-right">
+        <div class="auth-form-wrapper">
+            @if (IsRegistering)
+            {
+                <h2 class="auth-form-title">Skapa konto</h2>
+                <p class="auth-form-subtitle">Fyll i dina uppgifter för att komma igång.</p>
+            }
+            else
+            {
+                <h2 class="auth-form-title">Välkomna tillbaka</h2>
+                <p class="auth-form-subtitle">Ange dina uppgifter för att få tillgång till dina tavlor.</p>
+            }
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="auth-error">
+                    <i class="bi bi-exclamation-circle"></i> @errorMessage
+                </div>
+            }
+
+            @if (IsRegistering)
+            {
+                <EditForm Model="registerRequest" OnValidSubmit="HandleRegister" FormName="registerForm">
+                    <DataAnnotationsValidator />
+
+                    <div class="auth-field">
+                        <label class="auth-label">ANVÄNDARNAMN</label>
+                        <div class="auth-input-wrapper">
+                            <i class="bi bi-person"></i>
+                            <InputText @bind-Value="registerRequest.Username"
+                                       class="auth-input" placeholder="Ditt användarnamn" />
+                        </div>
+                        <ValidationMessage For="() => registerRequest.Username" />
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">E-POSTADRESS</label>
+                        <div class="auth-input-wrapper">
+                            <i class="bi bi-envelope"></i>
+                            <InputText @bind-Value="registerRequest.Email"
+                                       class="auth-input" placeholder="namn@företag.se" />
+                        </div>
+                        <ValidationMessage For="() => registerRequest.Email" />
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">LÖSENORD</label>
+                        <div class="auth-input-wrapper">
+                            <i class="bi bi-lock"></i>
+                            <InputText @bind-Value="registerRequest.Password"
+                                       class="auth-input" type="@(showPassword ? "text" : "password")"
+                                       placeholder="Minst 6 tecken" />
+                            <button type="button" class="auth-eye-btn" @onclick="TogglePassword">
+                                <i class="bi @(showPassword ? "bi-eye-slash" : "bi-eye")"></i>
+                            </button>
+                        </div>
+                        <ValidationMessage For="() => registerRequest.Password" />
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">BEKRÄFTA LÖSENORD</label>
+                        <div class="auth-input-wrapper">
+                            <i class="bi bi-lock-fill"></i>
+                            <InputText @bind-Value="registerRequest.ConfirmPassword"
+                                       class="auth-input" type="@(showPassword ? "text" : "password")"
+                                       placeholder="Upprepa lösenord" />
+                        </div>
+                        <ValidationMessage For="() => registerRequest.ConfirmPassword" />
+                    </div>
+
+                    <button type="submit" class="auth-submit-btn" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Skapa konto <i class="bi bi-arrow-right"></i>
+                    </button>
+                </EditForm>
+
+                <p class="auth-switch">
+                    Har du redan ett konto? <a @onclick="SwitchToLogin" @onclick:preventDefault href="">Logga in</a>
+                </p>
+            }
+            else
+            {
+                <EditForm Model="loginRequest" OnValidSubmit="HandleLogin" FormName="loginForm">
+                    <DataAnnotationsValidator />
+
+                    <div class="auth-field">
+                        <label class="auth-label">E-POSTADRESS</label>
+                        <div class="auth-input-wrapper">
+                            <i class="bi bi-envelope"></i>
+                            <InputText @bind-Value="loginRequest.Email"
+                                       class="auth-input" placeholder="namn@företag.se"
+                                       autocomplete="email" type="email" />
+                        </div>
+                        <ValidationMessage For="() => loginRequest.Email" />
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">LÖSENORD</label>
+                        <div class="auth-input-wrapper">
+                            <i class="bi bi-lock"></i>
+                            <InputText @bind-Value="loginRequest.Password"
+                                       class="auth-input" type="@(showPassword ? "text" : "password")"
+                                       placeholder="Ditt lösenord"
+                                       autocomplete="current-password" />
+                            <button type="button" class="auth-eye-btn" @onclick="TogglePassword">
+                                <i class="bi @(showPassword ? "bi-eye-slash" : "bi-eye")"></i>
+                            </button>
+                        </div>
+                        <ValidationMessage For="() => loginRequest.Password" />
+                    </div>
+
+                    <button type="submit" class="auth-submit-btn" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Logga in <i class="bi bi-arrow-right"></i>
+                    </button>
+                </EditForm>
+
+                <p class="auth-switch">
+                    Har du inget konto? <a @onclick="SwitchToRegister" @onclick:preventDefault href="">Skapa ett konto</a>
+                </p>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginRequest loginRequest = new();
+    private RegisterRequest registerRequest = new();
+    private string? errorMessage;
+    private bool isLoading;
+    private bool showPassword;
+    private bool IsRegistering;
+
+    protected override void OnInitialized()
+    {
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        IsRegistering = uri.AbsolutePath.TrimEnd('/').EndsWith("register", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void SwitchToLogin()
+    {
+        IsRegistering = false;
+        errorMessage = null;
+        Navigation.NavigateTo("/login", replace: true);
+    }
+
+    private void SwitchToRegister()
+    {
+        IsRegistering = true;
+        errorMessage = null;
+        Navigation.NavigateTo("/register", replace: true);
+    }
+
+    private void TogglePassword() => showPassword = !showPassword;
+
+    private async Task HandleLogin()
+    {
+        errorMessage = null;
+        isLoading = true;
+        try
+        {
+            var result = await AuthService.LoginAsync(loginRequest);
+            if (!result.Success)
+            {
+                errorMessage = result.ErrorMessage ?? "Felaktiga inloggningsuppgifter.";
+                return;
+            }
+            Navigation.NavigateTo("/");
+        }
+        finally { isLoading = false; }
+    }
+
+    private async Task HandleRegister()
+    {
+        errorMessage = null;
+        isLoading = true;
+        try
+        {
+            var result = await AuthService.RegisterAsync(registerRequest);
+            if (!result.Success)
+            {
+                errorMessage = result.ErrorMessage ?? "Registrering misslyckades.";
+                return;
+            }
+            Navigation.NavigateTo("/");
+        }
+        finally { isLoading = false; }
+    }
+}

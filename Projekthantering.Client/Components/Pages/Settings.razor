@@ -1,0 +1,252 @@
+@page "/settings"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using System.Security.Claims
+@using Projekthantering.Client.Services
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Inställningar</PageTitle>
+
+<div class="settings-page">
+    <div class="settings-header">
+        <h4 class="settings-page-title">Inställningar</h4>
+        <h2 class="settings-title">Profil & Konto</h2>
+        <p class="settings-subtitle">Hantera din profilinformation.</p>
+    </div>
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="settings-alert settings-alert--success">
+            <i class="bi bi-check-circle me-2"></i> @successMessage
+            <button type="button" class="btn-close btn-close-sm" @onclick="() => successMessage = null"></button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="settings-alert settings-alert--error">
+            <i class="bi bi-exclamation-circle me-2"></i> @errorMessage
+            <button type="button" class="btn-close btn-close-sm" @onclick="() => errorMessage = null"></button>
+        </div>
+    }
+
+    @* Profilkort *@
+    <div class="settings-card">
+        <div class="settings-card-header">
+            <i class="bi bi-person me-2"></i> Profil
+        </div>
+        <div class="settings-card-body">
+            <div class="settings-profile-row">
+                <div class="settings-profile-avatar">
+                    @GetInitials(userName)
+                </div>
+                <div class="settings-profile-details">
+                    <div class="settings-profile-name">@userName</div>
+                    <div class="settings-profile-email">@userEmail</div>
+                    <div class="settings-profile-role">
+                        <span class="settings-role-badge">@userRole</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-info-grid">
+                <div class="settings-info-item">
+                    <span class="settings-info-label">Användarnamn</span>
+                    <span class="settings-info-value">@userName</span>
+                </div>
+                <div class="settings-info-item">
+                    <span class="settings-info-label">E-postadress</span>
+                    <span class="settings-info-value">@userEmail</span>
+                </div>
+                <div class="settings-info-item">
+                    <span class="settings-info-label">Roll</span>
+                    <span class="settings-info-value">@userRole</span>
+                </div>
+                <div class="settings-info-item">
+                    <span class="settings-info-label">Användar-ID</span>
+                    <span class="settings-info-value">#@userId</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Byt lösenord *@
+    <div class="settings-card">
+        <div class="settings-card-header">
+            <i class="bi bi-shield-lock me-2"></i> Säkerhet
+        </div>
+        <div class="settings-card-body">
+            <p class="settings-card-desc">Byt ditt lösenord för att hålla ditt konto säkert.</p>
+            <button class="settings-action-btn" @onclick="() => showChangePassword = !showChangePassword">
+                <i class="bi bi-key me-2"></i>
+                @(showChangePassword ? "Avbryt" : "Byt lösenord")
+            </button>
+
+            @if (showChangePassword)
+            {
+                <div class="settings-password-form">
+                    <div class="auth-field">
+                        <label class="auth-label">Nuvarande lösenord</label>
+                        <div class="auth-input-wrapper">
+                            <i class="bi bi-lock"></i>
+                            <input type="password" class="auth-input" @bind="currentPassword"
+                                   placeholder="Ange nuvarande lösenord" />
+                        </div>
+                    </div>
+                    <div class="auth-field">
+                        <label class="auth-label">Nytt lösenord</label>
+                        <div class="auth-input-wrapper">
+                            <i class="bi bi-lock-fill"></i>
+                            <input type="password" class="auth-input" @bind="newPassword"
+                                   placeholder="Ange nytt lösenord" />
+                        </div>
+                    </div>
+                    <div class="auth-field">
+                        <label class="auth-label">Bekräfta nytt lösenord</label>
+                        <div class="auth-input-wrapper">
+                            <i class="bi bi-lock-fill"></i>
+                            <input type="password" class="auth-input" @bind="confirmPassword"
+                                   placeholder="Bekräfta nytt lösenord" />
+                        </div>
+                    </div>
+                    <button class="btn-modal-submit" @onclick="HandleChangePassword" disabled="@isChangingPassword"
+                            style="width: auto;">
+                        @if (isChangingPassword)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        Spara nytt lösenord
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+
+    @* Konto - ta bort *@
+    <div class="settings-card settings-card--danger">
+        <div class="settings-card-header settings-card-header--danger">
+            <i class="bi bi-exclamation-triangle me-2"></i> Farozon
+        </div>
+        <div class="settings-card-body">
+            <p class="settings-card-desc">När du tar bort ditt konto raderas all din data permanent. Detta kan inte ångras.</p>
+            <button class="btn-confirm-danger" @onclick="() => showDeleteConfirm = true">
+                <i class="bi bi-trash me-1"></i> Ta bort konto
+            </button>
+        </div>
+    </div>
+</div>
+
+@* Bekräftelse för kontoborttagning *@
+@if (showDeleteConfirm)
+{
+    <div class="modal-overlay" @onclick="() => showDeleteConfirm = false">
+        <div class="confirm-dialog" @onclick:stopPropagation>
+            <div class="confirm-icon confirm-icon--danger">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <h5 class="confirm-title">Ta bort konto?</h5>
+            <p class="confirm-text">
+                Är du helt säker? All din data, tavlor och kort kommer att raderas permanent.
+                Skriv <strong>@userName</strong> för att bekräfta.
+            </p>
+            <div class="auth-field" style="text-align: left;">
+                <div class="auth-input-wrapper">
+                    <input type="text" class="auth-input" @bind="deleteConfirmText"
+                           placeholder="Skriv ditt användarnamn..." />
+                </div>
+            </div>
+            <div class="confirm-actions">
+                <button class="btn-modal-cancel" @onclick="() => showDeleteConfirm = false">Avbryt</button>
+                <button class="btn-confirm-danger" disabled="@(deleteConfirmText != userName)">
+                    Ta bort permanent
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private string userName = "";
+    private string userEmail = "";
+    private string userRole = "";
+    private string userId = "";
+
+    private string? successMessage;
+    private string? errorMessage;
+
+    // Change password
+    private bool showChangePassword;
+    private string currentPassword = "";
+    private string newPassword = "";
+    private string confirmPassword = "";
+    private bool isChangingPassword;
+
+    // Delete account
+    private bool showDeleteConfirm;
+    private string deleteConfirmText = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        userName = user.Identity?.Name ?? "";
+        userEmail = user.FindFirst(ClaimTypes.Email)?.Value
+                 ?? user.FindFirst("email")?.Value ?? "";
+        userRole = user.FindFirst(ClaimTypes.Role)?.Value
+                ?? user.FindFirst("role")?.Value ?? "User";
+        userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+              ?? user.FindFirst("sub")?.Value ?? "";
+    }
+
+    private async Task HandleChangePassword()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        if (string.IsNullOrWhiteSpace(currentPassword) || string.IsNullOrWhiteSpace(newPassword))
+        {
+            errorMessage = "Fyll i alla fält.";
+            return;
+        }
+
+        if (newPassword != confirmPassword)
+        {
+            errorMessage = "Nya lösenorden matchar inte.";
+            return;
+        }
+
+        if (newPassword.Length < 6)
+        {
+            errorMessage = "Lösenordet måste vara minst 6 tecken.";
+            return;
+        }
+
+        isChangingPassword = true;
+        try
+        {
+            // TODO: Implementera ChangePassword API-endpoint
+            await Task.Delay(500); // Placeholder
+            successMessage = "Lösenordet har ändrats! (API-endpoint ej implementerad än)";
+            showChangePassword = false;
+            currentPassword = "";
+            newPassword = "";
+            confirmPassword = "";
+        }
+        catch
+        {
+            errorMessage = "Kunde inte ändra lösenordet.";
+        }
+        finally
+        {
+            isChangingPassword = false;
+        }
+    }
+
+    private string GetInitials(string? name)
+    {
+        if (string.IsNullOrEmpty(name)) return "?";
+        return name.Length >= 2 ? name[..2].ToUpper() : name.ToUpper();
+    }
+}

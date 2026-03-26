@@ -1,0 +1,104 @@
+@using Projekthantering.Shared.DTOs
+@using Projekthantering.Client.Services
+@inject IBoardService BoardService
+
+<div class="modal-overlay" @onclick="HandleOverlayClick">
+    <div class="modal-dialog-custom" @onclick:stopPropagation>
+        <div class="modal-header-custom">
+            <h5 class="modal-title-custom">
+                <i class="bi bi-plus-circle me-2"></i>Skapa ny tavla
+            </h5>
+            <button type="button" class="modal-close-btn" @onclick="HandleCancel">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <EditForm Model="createRequest" OnValidSubmit="HandleSubmit" FormName="create-board">
+            <DataAnnotationsValidator />
+            <div class="modal-body-custom">
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="auth-error">
+                        <i class="bi bi-exclamation-circle"></i> @errorMessage
+                    </div>
+                }
+                <div class="auth-field">
+                    <label class="auth-label">Titel</label>
+                    <div class="auth-input-wrapper">
+                        <i class="bi bi-kanban"></i>
+                        <InputText @bind-Value="createRequest.Title"
+                                   class="auth-input" placeholder="T.ex. Sprint 1, Hemsida..." autocomplete="off" />
+                    </div>
+                    <ValidationMessage For="() => createRequest.Title" />
+                </div>
+                <div class="auth-field">
+                    <label class="auth-label">Beskrivning (valfritt)</label>
+                    <div class="auth-input-wrapper" style="align-items: flex-start; padding-top: 0.5rem;">
+                        <i class="bi bi-text-left"></i>
+                        <InputTextArea @bind-Value="createRequest.Description"
+                                       class="auth-input" rows="3"
+                                       placeholder="Beskriv tavlans syfte..." style="resize: vertical;" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer-custom">
+                <button type="button" class="btn-modal-cancel" @onclick="HandleCancel" disabled="@isSubmitting">
+                    Avbryt
+                </button>
+                <button type="submit" class="btn-modal-submit" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                    }
+                    <i class="bi bi-plus-lg me-1"></i> Skapa tavla
+                </button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnCreated { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private CreateBoardRequest createRequest = new();
+    private bool isSubmitting;
+    private string? errorMessage;
+
+    private async Task HandleSubmit()
+    {
+        errorMessage = null;
+        isSubmitting = true;
+        try
+        {
+            var result = await BoardService.CreateBoardAsync(createRequest);
+            if (result is null)
+            {
+                errorMessage = "Kunde inte skapa tavlan. Forsok igen.";
+                return;
+            }
+            createRequest = new();
+            await OnCreated.InvokeAsync();
+        }
+        catch
+        {
+            errorMessage = "Ett fel uppstod. Kontrollera anslutningen.";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        createRequest = new();
+        await OnCancel.InvokeAsync();
+    }
+
+    private async Task HandleOverlayClick()
+    {
+        if (!isSubmitting)
+            await HandleCancel();
+    }
+}
