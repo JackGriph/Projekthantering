@@ -7,6 +7,7 @@ namespace Projekthantering.Controllers;
 
 [ApiController]
 [Authorize]
+[Route("api")]
 public class CardsController : ControllerBase
 {
     private readonly ICardService _cardService;
@@ -17,7 +18,7 @@ public class CardsController : ControllerBase
     }
 
     // POST /api/lists/{listId}/cards
-    [HttpPost("api/lists/{listId}/cards")]
+    [HttpPost("lists/{listId}/cards")]
     public async Task<ActionResult<CardDto>> CreateCard(int listId, CreateCardRequest request)
     {
         if (!ModelState.IsValid)
@@ -32,7 +33,7 @@ public class CardsController : ControllerBase
     }
 
     // GET /api/lists/{listId}/cards
-    [HttpGet("api/lists/{listId}/cards")]
+    [HttpGet("lists/{listId}/cards")]
     public async Task<ActionResult<List<CardDto>>> GetCardsByList(int listId)
     {
         var listExists = await _cardService.ListExistsAsync(listId);
@@ -44,7 +45,7 @@ public class CardsController : ControllerBase
     }
 
     // PATCH /api/cards/{id}
-    [HttpPatch("api/cards/{id}")]
+    [HttpPatch("cards/{id}")]
     public async Task<ActionResult<CardDto>> UpdateCard(int id, UpdateCardRequest request)
     {
         if (!ModelState.IsValid)
@@ -58,7 +59,7 @@ public class CardsController : ControllerBase
     }
 
     // DELETE /api/cards/{id}
-    [HttpDelete("api/cards/{id}")]
+    [HttpDelete("cards/{id}")]
     public async Task<IActionResult> DeleteCard(int id)
     {
         var deleted = await _cardService.DeleteCardAsync(id);
@@ -69,7 +70,7 @@ public class CardsController : ControllerBase
     }
 
     // PUT /api/cards/{id}/move
-    [HttpPut("api/cards/{id}/move")]
+    [HttpPut("cards/{id}/move")]
     public async Task<ActionResult<CardDto>> MoveCard(int id, MoveCardRequest request)
     {
         if (!ModelState.IsValid)
@@ -83,7 +84,7 @@ public class CardsController : ControllerBase
     }
 
     // Helper action used by CreatedAtAction in CreateCard
-    [HttpGet("api/cards/{id}")]
+    [HttpGet("cards/{id}")]
     public async Task<ActionResult<CardDto>> GetCard(int id)
     {
         var card = await _cardService.GetCardByIdAsync(id);

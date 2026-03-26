@@ -21,7 +21,7 @@ public class Program
 
         // JWT Authentication
         var jwtKey = builder.Configuration["Jwt:Key"]
-            ?? "SuperSecretKeyThatIsAtLeast32CharactersLong!";
+            ?? throw new InvalidOperationException("JWT-nyckel saknas i konfigurationen. Lägg till 'Jwt:Key' i appsettings.json.");
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {

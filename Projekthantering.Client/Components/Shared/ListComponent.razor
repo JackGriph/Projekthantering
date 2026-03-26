@@ -183,7 +183,10 @@
                 $"api/lists/{List.Id}/cards");
             cards = result ?? [];
         }
-        catch { /* Ignorera vid tyst omladdning */ }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fel vid omladdning: {ex.Message}");
+        }
     }
 
     private async Task LoadCardsAsync()

@@ -7,6 +7,7 @@ namespace Projekthantering.Controllers;
 
 [ApiController]
 [Authorize]
+[Route("api")]
 public class ListsController : ControllerBase
 {
     private readonly IListService _listService;
@@ -17,7 +18,7 @@ public class ListsController : ControllerBase
     }
 
     // POST /api/boards/{boardId}/lists
-    [HttpPost("api/boards/{boardId}/lists")]
+    [HttpPost("boards/{boardId}/lists")]
     public async Task<ActionResult<BoardListDto>> CreateList(int boardId, CreateListRequest request)
     {
         if (!ModelState.IsValid)
@@ -32,7 +33,7 @@ public class ListsController : ControllerBase
     }
 
     // GET /api/boards/{boardId}/lists
-    [HttpGet("api/boards/{boardId}/lists")]
+    [HttpGet("boards/{boardId}/lists")]
     public async Task<ActionResult<List<BoardListDto>>> GetListsByBoard(int boardId)
     {
         var boardExists = await _listService.BoardExistsAsync(boardId);
@@ -44,7 +45,7 @@ public class ListsController : ControllerBase
     }
 
     // PATCH /api/lists/{id}
-    [HttpPatch("api/lists/{id}")]
+    [HttpPatch("lists/{id}")]
     public async Task<ActionResult<BoardListDto>> UpdateList(int id, UpdateListRequest request)
     {
         if (!ModelState.IsValid)
@@ -58,7 +59,7 @@ public class ListsController : ControllerBase
     }
 
     // DELETE /api/lists/{id}
-    [HttpDelete("api/lists/{id}")]
+    [HttpDelete("lists/{id}")]
     public async Task<IActionResult> DeleteList(int id)
     {
         var deleted = await _listService.DeleteListAsync(id);
@@ -69,7 +70,7 @@ public class ListsController : ControllerBase
     }
 
     // Helper action used by CreatedAtAction in CreateList
-    [HttpGet("api/lists/{id}")]
+    [HttpGet("lists/{id}")]
     public async Task<ActionResult<BoardListDto>> GetList(int id)
     {
         var list = await _listService.GetListByIdAsync(id);
