@@ -221,21 +221,21 @@ h1:focus {
 .kanban-add-card-btn {
     width: 100%;
     padding: 0.6rem;
-    border: 2px dashed #d0d5dd;
+    border: 2px dashed #3a7bd5;
     border-radius: 10px;
-    background: transparent;
-    color: #98a2b3;
+    background: #eef3ff;
+    color: #3a7bd5;
     font-size: 0.85rem;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     transition: border-color 0.2s, color 0.2s, background 0.2s;
     margin-top: auto;
 }
 
 .kanban-add-card-btn:hover {
-    border-color: #3a7bd5;
-    color: #3a7bd5;
-    background: #f5f8ff;
+    border-color: #2a5db0;
+    color: #fff;
+    background: #3a7bd5;
 }
 
 /* ===== AUTH PAGE ===== */

@@ -73,7 +73,7 @@ else if (board != null)
                 <EditForm Model="newListRequest" OnValidSubmit="HandleCreateList" FormName="add-list">
                     <DataAnnotationsValidator />
                     <InputText @bind-Value="newListRequest.Title" class="form-control form-control-sm mb-2"
-                               placeholder="Listtitel..." />
+                               placeholder="Titel..." />
                     <ValidationMessage For="() => newListRequest.Title" />
                     <button type="submit" class="btn btn-success btn-sm me-1">Lägg till</button>
                     <button type="button" class="btn btn-secondary btn-sm" @onclick="CancelAddList">Avbryt</button>

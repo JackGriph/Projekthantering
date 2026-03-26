@@ -54,11 +54,11 @@
             <div class="drop-placeholder text-muted small text-center py-3 mb-1">
                 @if (DraggedCard != null && DraggedCard.ListId != List.Id)
                 {
-                    <span><i class="bi bi-plus-circle"></i> Slapp kort har</span>
+                    <span><i class="bi bi-plus-circle"></i> Släpp kort här</span>
                 }
                 else
                 {
-                    <span>Inga kort annu - lagg till ett!</span>
+                    <span>Inga kort ännu - lägg till ett!</span>
                 }
             </div>
         }
@@ -87,7 +87,7 @@
                     {
                         <span class="spinner-border spinner-border-sm me-1" role="status"></span>
                     }
-                    Lagg till
+                    Lägg till
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm mt-1" @onclick="CancelAddCard"
                         disabled="@isSubmitting">Avbryt</button>
@@ -96,7 +96,7 @@
         else
         {
             <button class="kanban-add-card-btn" @onclick="() => isAddingCard = true">
-                <i class="bi bi-plus-lg me-1"></i> Lagg till kort
+                <i class="bi bi-plus-lg me-1"></i> Lägg till kort
             </button>
         }
     }
@@ -111,7 +111,7 @@
     }
 </div>
 
-@* Bekraftelse-dialog for radering *@
+@* Bekräftelse-dialog för radering *@
 @if (showConfirmDelete)
 {
     <div class="modal-overlay" @onclick="() => showConfirmDelete = false">
@@ -121,7 +121,7 @@
             </div>
             <h5 class="confirm-title">Ta bort lista?</h5>
             <p class="confirm-text">
-                Ar du saker pa att du vill ta bort <strong>@List.Title</strong>?
+                Är du säker på att du vill ta bort <strong>@List.Title</strong>?
                 Alla @cards.Count kort i listan kommer att raderas.
             </p>
             <div class="confirm-actions">

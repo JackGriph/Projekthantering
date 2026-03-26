@@ -34,7 +34,7 @@
     </div>
 </div>
 
-@* Bekraftelse-dialog *@
+@* Bekräftelse-dialog *@
 @if (showConfirmDelete)
 {
     <div class="modal-overlay" @onclick="() => showConfirmDelete = false" @onclick:stopPropagation>
@@ -44,7 +44,7 @@
             </div>
             <h5 class="confirm-title">Ta bort tavla?</h5>
             <p class="confirm-text">
-                Ar du saker pa att du vill ta bort <strong>@Board.Title</strong>?
+                Är du säker på att du vill ta bort <strong>@Board.Title</strong>?
                 Alla listor och kort i tavlan kommer att raderas.
             </p>
             <div class="confirm-actions">

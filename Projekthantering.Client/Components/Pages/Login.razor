@@ -15,7 +15,7 @@
             <h1 class="auth-title">Hantera dina projekt med <span class="auth-highlight">PlanIt</span></h1>
             <p class="auth-subtitle">
                 Ett kraftfullt projektverktyg för team.<br />
-                Organisera, planera och samarbeta i en miljö byggd for klarhet.
+                Organisera, planera och samarbeta i en miljö byggd för klarhet.
             </p>
             <div class="auth-social-proof">
                 <span class="auth-badge">Skolprojekt 2026</span>
@@ -89,7 +89,7 @@
                             <i class="bi bi-lock-fill"></i>
                             <InputText @bind-Value="registerRequest.ConfirmPassword"
                                        class="auth-input" type="@(showPassword ? "text" : "password")"
-                                       placeholder="Upprepa losenord" />
+                                       placeholder="Upprepa lösenord" />
                         </div>
                         <ValidationMessage For="() => registerRequest.ConfirmPassword" />
                     </div>
@@ -117,7 +117,7 @@
                         <div class="auth-input-wrapper">
                             <i class="bi bi-envelope"></i>
                             <InputText @bind-Value="loginRequest.Email"
-                                       class="auth-input" placeholder="namn@foretag.se"
+                                       class="auth-input" placeholder="namn@företag.se"
                                        autocomplete="email" type="email" />
                         </div>
                         <ValidationMessage For="() => loginRequest.Email" />

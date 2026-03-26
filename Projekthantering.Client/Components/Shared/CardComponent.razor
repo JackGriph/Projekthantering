@@ -97,7 +97,7 @@
     }
 </div>
 
-@* Bekraftelse-dialog for radering *@
+@* Bekräftelse-dialog för radering *@
 @if (showConfirmDelete)
 {
     <div class="modal-overlay" @onclick="() => showConfirmDelete = false">
@@ -107,7 +107,7 @@
             </div>
             <h5 class="confirm-title">Ta bort kort?</h5>
             <p class="confirm-text">
-                Ar du saker pa att du vill ta bort <strong>@Card.Title</strong>?
+                Är du säker på att du vill ta bort <strong>@Card.Title</strong>?
             </p>
             <div class="confirm-actions">
                 <button class="btn-modal-cancel" @onclick="() => showConfirmDelete = false">Avbryt</button>
